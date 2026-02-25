@@ -40,6 +40,14 @@ local HEALTH_WIDTH = 2
 local MIN_BOX_HEIGHT = 6
 local MIN_BOX_WIDTH = 3
 
+local function isColorClose(a: Color3, b: Color3, tolerance: number): boolean
+	tolerance = tolerance or 0.05
+
+	return math.abs(a.R - b.R) <= tolerance
+		and math.abs(a.G - b.G) <= tolerance
+		and math.abs(a.B - b.B) <= tolerance
+end
+
 ------------------------------------------------------------------
 -- STATE
 ------------------------------------------------------------------
@@ -91,17 +99,39 @@ end
 
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
-	if not highlight then return BLUE end
-
-	if glowEnabled then
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	else
-		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	if not highlight then
+		return BLUE
 	end
 
-	return highlight.FillColor
-end
+	local fill = highlight.FillColor
 
+	-- GLOW ENABLED
+	if glowEnabled then
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+
+		-- If roughly green, force to blue
+		if isColorClose(fill, GREEN, 0.05) then
+			highlight.FillColor = BLUE
+			highlight.OutlineColor = BLUE
+			return BLUE
+		end
+
+		-- Red stays red
+		return fill
+	end
+
+	-- GLOW DISABLED
+	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+
+	-- If roughly blue (forced), revert to green
+	if isColorClose(fill, BLUE, 0.05) then
+		highlight.FillColor = GREEN
+		highlight.OutlineColor = GREEN
+		return GREEN
+	end
+
+	return fill
+end
 ------------------------------------------------------------------
 -- GUI ROOT
 ------------------------------------------------------------------
