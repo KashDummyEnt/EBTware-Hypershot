@@ -89,20 +89,32 @@ end
 -- HIGHLIGHT
 ------------------------------------------------------------------
 
+local function isRed(c: Color3): boolean
+	return c.R > 0.6 and c.G < 0.4 and c.B < 0.4
+end
+
 local function isGreen(c: Color3): boolean
 	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
 end
 
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
-	if not highlight then return BLUE end
+	if not highlight then
+		return BLUE
+	end
 
+	local currentColor = highlight.FillColor
+
+	-- Only remove AlwaysOnTop for RED when glow disabled
 	if glowEnabled then
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	else
-		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		if isRed(currentColor) then
+			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		end
 	end
 
+	-- Normalize green to blue if needed (your logic)
 	if isGreen(highlight.FillColor) or isGreen(highlight.OutlineColor) then
 		highlight.FillColor = BLUE
 		highlight.OutlineColor = BLUE
