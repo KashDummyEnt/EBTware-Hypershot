@@ -460,12 +460,12 @@ end
 		-- Then calculate 2D box
 		if preview2DBox then
 
-			local viewportSize = viewport.AbsoluteSize
+			local panelSize = previewPanel.AbsoluteSize
 			local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
 
 			local projectedHeight =
 				(size.Y / camToModel) *
-				(viewportSize.Y / (2 * math.tan(fov / 2)))
+				(panelSize.Y / (2 * math.tan(fov / 2)))
 
 			local projectedWidth = projectedHeight * (size.X / size.Y)
 
@@ -473,8 +473,8 @@ end
 			projectedHeight *= 1.1
 			projectedWidth *= 1.1
 
-			local centerX = viewportSize.X / 2
-			local centerY = viewportSize.Y / 2
+			local centerX = panelSize.X / 2
+			local centerY = panelSize.Y / 2
 
 			preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
 			preview2DBox.Position = UDim2.fromOffset(
