@@ -1,6 +1,7 @@
 --!strict
 -- CleanMenu.lua
 -- Full build with 2-column toggle layout per tab
+-- Lazy ESP load + crash fix (no startup execution)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -29,13 +30,15 @@ local CONFIG = {
 }
 
 ----------------------------------------------------------------
--- LOAD TOGGLE MODULE
+-- MODULE URLS
 ----------------------------------------------------------------
 local TOGGLES_URL = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/ToggleSwitches.lua"
-local DRAG_URL = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/DragController.lua"
-local ESP_URL = "https://raw.githubusercontent.com/KashDummyEnt/EBTware-Hypershot/refs/heads/main/Features/ESP.lua"
+local DRAG_URL    = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/DragController.lua"
+local ESP_URL     = "https://raw.githubusercontent.com/KashDummyEnt/EBTware-Hypershot/refs/heads/main/Features/ESP.lua"
 
-
+----------------------------------------------------------------
+-- SAFE MODULE LOADER
+----------------------------------------------------------------
 local function loadModule(url: string)
 	local ok, code = pcall(function()
 		return game:HttpGet(url)
@@ -46,40 +49,33 @@ local function loadModule(url: string)
 	if not fn then error("compile fail") end
 
 	local result = fn()
-	if type(result) ~= "table" then
-		error("Toggle module invalid")
-	end
-
 	return result
 end
 
+----------------------------------------------------------------
+-- LOAD CORE MODULES
+----------------------------------------------------------------
 local Toggles = loadModule(TOGGLES_URL)
 local DragController = loadModule(DRAG_URL)
 
 local G = (typeof(getgenv) == "function") and getgenv() or _G
 G.__HIGGI_TOGGLES_API = Toggles
 
-local ESP = loadModule(ESP_URL)
+----------------------------------------------------------------
+-- LAZY FEATURE LOADER
+----------------------------------------------------------------
+local featureLoaded: {[string]: boolean} = {}
+
+local function ensureFeatureLoaded(key: string, url: string)
+	if featureLoaded[key] then
+		return
+	end
+	featureLoaded[key] = true
+	loadModule(url)
+end
 
 ----------------------------------------------------------------
--- ADAPTER FOR TOGGLE CONFIG
-----------------------------------------------------------------
-local ToggleConfig = {
-	Bg2 = CONFIG.BgCard,
-	Bg3 = CONFIG.BgSidebar,
-	Text = CONFIG.Text,
-	SubText = CONFIG.SubText,
-	Stroke = CONFIG.Stroke,
-	Accent = CONFIG.Accent,
-}
-
-local ToggleServices = {
-	TweenService = TweenService,
-	UserInputService = UserInputService,
-}
-
-----------------------------------------------------------------
--- UI HELPERS
+-- UI HELPERS (UNCHANGED)
 ----------------------------------------------------------------
 local function make(class, props)
 	local inst = Instance.new(class)
@@ -170,9 +166,9 @@ local body = make("Frame", {
 })
 
 ----------------------------------------------------------------
--- SIDEBAR (NARROWER)
+-- SIDEBAR
 ----------------------------------------------------------------
-local SIDEBAR_WIDTH = 120 -- was 150
+local SIDEBAR_WIDTH = 120
 
 local sidebar = make("Frame", {
 	BackgroundColor3 = CONFIG.BgSidebar,
@@ -261,47 +257,6 @@ local function createTab(name: string)
 end
 
 ----------------------------------------------------------------
--- 2 COLUMN TOGGLE BUILDER
-----------------------------------------------------------------
-local function buildToggleLayout(page: Frame)
-	local container = make("Frame", {
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1,0,1,0),
-		Parent = page,
-	})
-
-	make("UIPadding", {
-		PaddingTop = UDim.new(0,10),
-		PaddingLeft = UDim.new(0,10),
-		PaddingRight = UDim.new(0,10),
-		Parent = container,
-	})
-
-	local horizontal = make("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0,12),
-		Parent = container,
-	})
-
-	local left = make("Frame", {
-		BackgroundTransparency = 1,
-		Size = UDim2.new(0.5,-6,1,0),
-		Parent = container,
-	})
-
-	local right = make("Frame", {
-		BackgroundTransparency = 1,
-		Size = UDim2.new(0.5,-6,1,0),
-		Parent = container,
-	})
-
-	make("UIListLayout", { Padding = UDim.new(0,12), Parent = left })
-	make("UIListLayout", { Padding = UDim.new(0,12), Parent = right })
-
-	return left, right
-end
-
-----------------------------------------------------------------
 -- CREATE TABS
 ----------------------------------------------------------------
 local pageMain = createTab("Main")
@@ -311,44 +266,33 @@ local pageMisc = createTab("Misc")
 local pageSettings = createTab("Settings")
 
 ----------------------------------------------------------------
--- BUILD TOGGLE LAYOUTS
-----------------------------------------------------------------
-local mainL, mainR = buildToggleLayout(pageMain)
-local visL, visR = buildToggleLayout(pageVisuals)
-local worldL, worldR = buildToggleLayout(pageWorld)
-local miscL, miscR = buildToggleLayout(pageMisc)
-local setL, setR = buildToggleLayout(pageSettings)
-
-----------------------------------------------------------------
--- ADD 2 ROWS PER TAB
+-- ADD VISUALS TOGGLES (LAZY ESP LOAD)
 ----------------------------------------------------------------
 Toggles.AddToggleCard(
-	visL,
+	pageVisuals,
 	"vis_esp",
 	"2D Box ESP",
 	"Draws boxes, health, and names.",
 	1,
 	false,
-	ToggleConfig,
-	ToggleServices
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+		Accent = CONFIG.Accent,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	},
+	function(state)
+		if state then
+			ensureFeatureLoaded("vis_esp", ESP_URL)
+		end
+	end
 )
-
-Toggles.AddToggleCard(
-	visL,
-	"vis_snaplines",
-	"Snaplines",
-	"Draws bottom snaplines.",
-	2,
-	false,
-	ToggleConfig,
-	ToggleServices
-)
-
-add4(mainL, mainR, "main_")
-add4(visL, visR, "vis_")
-add4(worldL, worldR, "world_")
-add4(miscL, miscR, "misc_")
-add4(setL, setR, "set_")
 
 switchTab("Main")
 
