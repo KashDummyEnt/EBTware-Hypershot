@@ -295,7 +295,7 @@ Toggles.AddToggleCard(
 	"Glow / Highlight",
 	"Forces AlwaysOnTop highlight. Converts green glow to blue.",
 	1,
-	true,
+	false,
 	{
 		Bg2 = CONFIG.BgCard,
 		Bg3 = CONFIG.BgSidebar,
@@ -317,7 +317,7 @@ Toggles.AddToggleCard(
 	"Boxes",
 	"Draws 2D box around players.",
 	2,
-	true,
+	false,
 	{
 		Bg2 = CONFIG.BgCard,
 		Bg3 = CONFIG.BgSidebar,
@@ -339,7 +339,7 @@ Toggles.AddToggleCard(
 	"Health Bar",
 	"Shows vertical health bar on left side.",
 	3,
-	true,
+	false,
 	{
 		Bg2 = CONFIG.BgCard,
 		Bg3 = CONFIG.BgSidebar,
@@ -361,7 +361,7 @@ Toggles.AddToggleCard(
 	"Name",
 	"Displays player name above box.",
 	4,
-	true,
+	false,
 	{
 		Bg2 = CONFIG.BgCard,
 		Bg3 = CONFIG.BgSidebar,
@@ -383,7 +383,7 @@ Toggles.AddToggleCard(
 	"Snapline",
 	"Draws 3D snapline from you to player.",
 	5,
-	true,
+	false,
 	{
 		Bg2 = CONFIG.BgCard,
 		Bg3 = CONFIG.BgSidebar,
