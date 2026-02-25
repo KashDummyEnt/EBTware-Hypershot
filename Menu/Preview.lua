@@ -21,7 +21,7 @@ function Preview.Init(deps)
 	-- BUILD AVATAR + PREVIEW ESP
 	------------------------------------------------------------
 
-	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 255)
+	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 0)
 
 	local preview: Model? = nil
 	local previewBox: Part? = nil
@@ -476,18 +476,16 @@ end
 			local minX, minY = math.huge, math.huge
 			local maxX, maxY = -math.huge, -math.huge
 
-			for _, cornerCF in ipairs(corners) do
-				local screenPos, onScreen = cam:WorldToViewportPoint(cornerCF.Position)
+for _, cornerCF in ipairs(corners) do
+	local screenPos = cam:WorldToViewportPoint(cornerCF.Position)
 
-				if onScreen then
-					minX = math.min(minX, screenPos.X)
-					minY = math.min(minY, screenPos.Y)
-					maxX = math.max(maxX, screenPos.X)
-					maxY = math.max(maxY, screenPos.Y)
-				end
-			end
+	minX = math.min(minX, screenPos.X)
+	minY = math.min(minY, screenPos.Y)
+	maxX = math.max(maxX, screenPos.X)
+	maxY = math.max(maxY, screenPos.Y)
+end
 
-			if minX ~= math.huge then
+			if maxX > minX and maxY > minY then
 				local panelPos = previewPanel.AbsolutePosition
 
 				local relativeX = minX - panelPos.X
