@@ -415,6 +415,7 @@ end
 			idleTimer += dt
 		end
 
+		-- Inertia
 		if not draggingPreview and idleTimer <= idleDelay then
 			rotationY += velocity
 			velocity *= inertiaDamping
@@ -424,6 +425,7 @@ end
 			end
 		end
 
+		-- Idle spring motion
 		if not draggingPreview and idleTimer > idleDelay then
 			local target = math.sin(tick() * springFrequency) * springTargetAngle
 			local displacement = target - rotationY
@@ -435,47 +437,55 @@ end
 			rotationY += springVelocity * dt
 		end
 
+		-- Apply rotation
 		preview:SetPrimaryPartCFrame(
 			CFrame.new(0,0,0) *
 			CFrame.Angles(0, math.rad(180 + rotationY), 0)
 		)
 
+		--------------------------------------------------------
+		-- CAMERA + 2D BOX PROJECTION (CORRECT ORDER)
+		--------------------------------------------------------
+
 		local cf, size = preview:GetBoundingBox()
-
-if preview2DBox then
-
-	local viewportSize = viewport.AbsoluteSize
-	local fov = math.rad(cam.FieldOfView)
-
-	-- Distance from camera to model center
-	local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
-
-	-- Project height properly using perspective math
-	local projectedHeight =
-		(size.Y / camToModel) *
-		(viewportSize.Y / (2 * math.tan(fov / 2)))
-
-	local projectedWidth = projectedHeight * (size.X / size.Y)
-
-	local centerX = viewportSize.X / 2
-	local centerY = viewportSize.Y / 2
-
-	preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
-	preview2DBox.Position = UDim2.fromOffset(
-		centerX - projectedWidth/2,
-		centerY - projectedHeight/2
-	)
-
-	preview2DBox.Visible = true
-end
 		local center = cf.Position
 
 		local maxDim = math.max(size.X, size.Y, size.Z)
 		local fov = math.rad(cam.FieldOfView)
 		local distance = (maxDim / (2 * math.tan(fov / 2))) * 1.25
 
+		-- Update camera FIRST
 		cam.CFrame = CFrame.new(center + Vector3.new(0,0,distance), center)
 
+		-- Then calculate 2D box
+		if preview2DBox then
+
+			local viewportSize = viewport.AbsoluteSize
+			local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
+
+			local projectedHeight =
+				(size.Y / camToModel) *
+				(viewportSize.Y / (2 * math.tan(fov / 2)))
+
+			local projectedWidth = projectedHeight * (size.X / size.Y)
+
+			-- Slight visual trim to perfectly match 3D box
+			projectedHeight *= 0.98
+			projectedWidth *= 0.98
+
+			local centerX = viewportSize.X / 2
+			local centerY = viewportSize.Y / 2
+
+			preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+			preview2DBox.Position = UDim2.fromOffset(
+				centerX - projectedWidth/2,
+				centerY - projectedHeight/2
+			)
+
+			preview2DBox.Visible = true
+		end
+
+		-- 3D Box
 		if previewBox then
 			local paddedSize = Vector3.new(
 				size.X + 0.05,
@@ -487,6 +497,7 @@ end
 			previewBox.CFrame = cf
 		end
 	end)
-end
+
+end -- closes Preview.Init
 
 return Preview
