@@ -354,7 +354,7 @@ end
 	buildAvatar()
 
 	------------------------------------------------------------
-	-- PREVIEW MOTION SYSTEM (FULL ORIGINAL)
+	-- PREVIEW MOTION SYSTEM (FULL ORIGINAL - FIXED)
 	------------------------------------------------------------
 
 	local draggingPreview = false
@@ -373,6 +373,10 @@ end
 	local springStiffness = 8
 	local springDamping = 6
 	local springVelocity = 0
+
+	------------------------------------------------------------
+	-- INPUT
+	------------------------------------------------------------
 
 	viewport.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -407,6 +411,10 @@ end
 		end
 	end)
 
+	------------------------------------------------------------
+	-- RENDER LOOP
+	------------------------------------------------------------
+
 	RunService.RenderStepped:Connect(function(dt)
 
 		if not preview or not preview.PrimaryPart then return end
@@ -437,14 +445,17 @@ end
 			rotationY += springVelocity * dt
 		end
 
-		-- Apply rotation
+		--------------------------------------------------------
+		-- APPLY ROTATION
+		--------------------------------------------------------
+
 		preview:SetPrimaryPartCFrame(
-			CFrame.new(0,0,0) *
+			CFrame.new(0, 0, 0) *
 			CFrame.Angles(0, math.rad(180 + rotationY), 0)
 		)
 
 		--------------------------------------------------------
-		-- CAMERA + 2D BOX PROJECTION (CORRECT ORDER)
+		-- CAMERA FIRST
 		--------------------------------------------------------
 
 		local cf, size = preview:GetBoundingBox()
@@ -454,10 +465,12 @@ end
 		local fov = math.rad(cam.FieldOfView)
 		local distance = (maxDim / (2 * math.tan(fov / 2))) * 1.25
 
-		-- Update camera FIRST
-		cam.CFrame = CFrame.new(center + Vector3.new(0,0,distance), center)
+		cam.CFrame = CFrame.new(center + Vector3.new(0, 0, distance), center)
 
-		-- Then calculate 2D box
+		--------------------------------------------------------
+		-- 2D BOX (PROPER CENTER PROJECTION)
+		--------------------------------------------------------
+
 		if preview2DBox then
 
 			local viewportSize = viewport.AbsoluteSize
@@ -469,27 +482,28 @@ end
 
 			local projectedWidth = projectedHeight * (size.X / size.Y)
 
-			-- Slight visual trim to perfectly match 3D box
-				projectedHeight *= 1.2
-				projectedWidth *= 1.2
+			-- Slight outward padding (your chosen 1.2 scale)
+			projectedHeight *= 1.2
+			projectedWidth *= 1.2
 
-local screenPos, onScreen = cam:WorldToViewportPoint(cf.Position)
+			local screenPos, onScreen = cam:WorldToViewportPoint(cf.Position)
 
-if onScreen then
-	preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
-	preview2DBox.Position = UDim2.fromOffset(
-		screenPos.X - projectedWidth/2,
-		screenPos.Y - projectedHeight/2
-	)
-	preview2DBox.Visible = true
-else
-	preview2DBox.Visible = false
-end
-
-			preview2DBox.Visible = true
+			if onScreen then
+				preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+				preview2DBox.Position = UDim2.fromOffset(
+					screenPos.X - projectedWidth / 2,
+					screenPos.Y - projectedHeight / 2
+				)
+				preview2DBox.Visible = true
+			else
+				preview2DBox.Visible = false
+			end
 		end
 
-		-- 3D Box
+		--------------------------------------------------------
+		-- 3D BOX
+		--------------------------------------------------------
+
 		if previewBox then
 			local paddedSize = Vector3.new(
 				size.X + 0.05,
