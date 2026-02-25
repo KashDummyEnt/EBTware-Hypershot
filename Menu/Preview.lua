@@ -21,7 +21,7 @@ function Preview.Init(deps)
 	-- BUILD AVATAR + PREVIEW ESP
 	------------------------------------------------------------
 
-	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 255)
+	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 0)
 
 	local preview: Model? = nil
 	local previewBox: Part? = nil
@@ -354,7 +354,7 @@ end
 	buildAvatar()
 
 	------------------------------------------------------------
-	-- PREVIEW MOTION SYSTEM (FULL ORIGINAL - FIXED)
+	-- PREVIEW MOTION SYSTEM (FULL ORIGINAL)
 	------------------------------------------------------------
 
 	local draggingPreview = false
@@ -373,10 +373,6 @@ end
 	local springStiffness = 8
 	local springDamping = 6
 	local springVelocity = 0
-
-	------------------------------------------------------------
-	-- INPUT
-	------------------------------------------------------------
 
 	viewport.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -411,10 +407,6 @@ end
 		end
 	end)
 
-	------------------------------------------------------------
-	-- RENDER LOOP
-	------------------------------------------------------------
-
 	RunService.RenderStepped:Connect(function(dt)
 
 		if not preview or not preview.PrimaryPart then return end
@@ -445,17 +437,14 @@ end
 			rotationY += springVelocity * dt
 		end
 
-		--------------------------------------------------------
-		-- APPLY ROTATION
-		--------------------------------------------------------
-
+		-- Apply rotation
 		preview:SetPrimaryPartCFrame(
-			CFrame.new(0, 0, 0) *
+			CFrame.new(0,0,0) *
 			CFrame.Angles(0, math.rad(180 + rotationY), 0)
 		)
 
 		--------------------------------------------------------
-		-- CAMERA FIRST
+		-- CAMERA + 2D BOX PROJECTION (CORRECT ORDER)
 		--------------------------------------------------------
 
 		local cf, size = preview:GetBoundingBox()
@@ -465,51 +454,38 @@ end
 		local fov = math.rad(cam.FieldOfView)
 		local distance = (maxDim / (2 * math.tan(fov / 2))) * 1.25
 
-		cam.CFrame = CFrame.new(center + Vector3.new(0, 0, distance), center)
+		-- Update camera FIRST
+		cam.CFrame = CFrame.new(center + Vector3.new(0,0,distance), center)
 
-		--------------------------------------------------------
-		-- 2D BOX (PROPER CENTER PROJECTION)
-		--------------------------------------------------------
+		-- Then calculate 2D box
+		if preview2DBox then
 
-if preview2DBox then
+			local viewportSize = viewport.AbsoluteSize
+			local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
 
-	local viewportSize = viewport.AbsoluteSize
-	local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
+			local projectedHeight =
+				(size.Y / camToModel) *
+				(viewportSize.Y / (2 * math.tan(fov / 2)))
 
-	local projectedHeight =
-		(size.Y / camToModel) *
-		(viewportSize.Y / (2 * math.tan(fov / 2)))
+			local projectedWidth = projectedHeight * (size.X / size.Y)
 
-	local projectedWidth = projectedHeight * (size.X / size.Y)
+			-- Slight visual trim to perfectly match 3D box
+			projectedHeight *= 1.1
+			projectedWidth *= 1.1
 
-	projectedHeight *= 1.2
-	projectedWidth *= 1.2
+			local centerX = viewportSize.X / 2
+			local centerY = viewportSize.Y / 2
 
-	local screenPos, onScreen = cam:WorldToViewportPoint(cf.Position)
+			preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+			preview2DBox.Position = UDim2.fromOffset(
+				centerX - projectedWidth/2,
+				centerY - projectedHeight/2
+			)
 
-	if onScreen then
+			preview2DBox.Visible = true
+		end
 
-		-- Convert screen → panel space
-		local panelAbsPos = previewPanel.AbsolutePosition
-		local localX = screenPos.X - panelAbsPos.X
-		local localY = screenPos.Y - panelAbsPos.Y
-
-		preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
-		preview2DBox.Position = UDim2.fromOffset(
-			localX - projectedWidth / 2,
-			localY - projectedHeight / 2
-		)
-
-		preview2DBox.Visible = true
-	else
-		preview2DBox.Visible = false
-	end
-end
-
-		--------------------------------------------------------
-		-- 3D BOX
-		--------------------------------------------------------
-
+		-- 3D Box
 		if previewBox then
 			local paddedSize = Vector3.new(
 				size.X + 0.05,
