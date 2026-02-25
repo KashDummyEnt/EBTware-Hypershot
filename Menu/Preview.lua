@@ -43,7 +43,7 @@ function Preview.Init(deps)
 	previewNameLabel.Parent = previewPanel
 
 ------------------------------------------------------------
--- HEALTH BAR (LEFT SIDE VERTICAL)
+-- HEALTH BAR (LEFT SIDE VERTICAL - SHARP EDGES)
 ------------------------------------------------------------
 
 local HEALTH_WIDTH = 6
@@ -57,13 +57,9 @@ previewHealthContainer.Parent = previewPanel
 
 local back = Instance.new("Frame")
 back.Size = UDim2.new(1, 0, 1, 0)
-back.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+back.BackgroundColor3 = Color3.fromRGB(35, 35, 35) -- identical to ESP
 back.BorderSizePixel = 0
 back.Parent = previewHealthContainer
-
-local backCorner = Instance.new("UICorner")
-backCorner.CornerRadius = UDim.new(1, 0)
-backCorner.Parent = back
 
 local fill = Instance.new("Frame")
 fill.Size = UDim2.new(1, 0, 1, 0)
@@ -71,10 +67,6 @@ fill.Position = UDim2.new(0, 0, 0, 0)
 fill.BorderSizePixel = 0
 fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 fill.Parent = back
-
-local fillCorner = Instance.new("UICorner")
-fillCorner.CornerRadius = UDim.new(1, 0)
-fillCorner.Parent = fill
 
 ------------------------------------------------------------
 -- PREVIEW HEALTH LOOP (VERTICAL LEFT STYLE)
