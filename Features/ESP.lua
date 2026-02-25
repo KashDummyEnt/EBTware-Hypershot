@@ -40,14 +40,6 @@ local HEALTH_WIDTH = 2
 local MIN_BOX_HEIGHT = 6
 local MIN_BOX_WIDTH = 3
 
-local function isColorClose(a: Color3, b: Color3, tolerance: number): boolean
-	tolerance = tolerance or 0.05
-
-	return math.abs(a.R - b.R) <= tolerance
-		and math.abs(a.G - b.G) <= tolerance
-		and math.abs(a.B - b.B) <= tolerance
-end
-
 ------------------------------------------------------------------
 -- STATE
 ------------------------------------------------------------------
@@ -97,54 +89,19 @@ end
 -- HIGHLIGHT
 ------------------------------------------------------------------
 
-local forcedBlue: {[Highlight]: boolean} = {}
-
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
-	if not highlight then
-		return BLUE
-	end
-
-	local fill = highlight.FillColor
-
-	------------------------------------------------------------------
-	-- GLOW ENABLED
-	------------------------------------------------------------------
+	if not highlight then return BLUE end
 
 	if glowEnabled then
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-
-		-- If not red, force to blue
-		if not isColorClose(fill, RED, 0.05) then
-			if not forcedBlue[highlight] then
-				highlight.FillColor = BLUE
-				highlight.OutlineColor = BLUE
-				forcedBlue[highlight] = true
-			end
-			return BLUE
-		end
-
-		-- Red stays red
-		return fill
+	else
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 	end
 
-	------------------------------------------------------------------
-	-- GLOW DISABLED
-	------------------------------------------------------------------
-
-	-- If we forced this one blue earlier, revert it
-	if forcedBlue[highlight] then
-		highlight.FillColor = GREEN
-		highlight.OutlineColor = GREEN
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		forcedBlue[highlight] = nil
-		return GREEN
-	end
-
-	-- Red glows lose AlwaysOnTop
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-	return fill
+	return highlight.FillColor
 end
+
 ------------------------------------------------------------------
 -- GUI ROOT
 ------------------------------------------------------------------
@@ -176,7 +133,7 @@ local function createESP(model: Model): ESPData
 	local healthBg = Instance.new("Frame")
 	healthBg.BackgroundColor3 = Color3.fromRGB(35,35,35)
 	healthBg.BorderSizePixel = 0
-	healthBg.Parent = screenGui
+	healthBg.Parent = box
 
 	local healthFill = Instance.new("Frame")
 	healthFill.BorderSizePixel = 0
@@ -350,20 +307,10 @@ local function startESP()
 
 			esp.healthBg.Visible = healthEnabled
 			esp.healthFill.Visible = healthEnabled
-esp.healthBg.Size = UDim2.fromOffset(HEALTH_WIDTH, height)
-esp.healthBg.Position = UDim2.fromOffset(
-	top2D.X - width/2 - HEALTH_WIDTH - 2,
-	top2D.Y
-)
-esp.healthFill.Size = UDim2.fromOffset(
-	HEALTH_WIDTH,
-	height * hpPercent
-)
-
-esp.healthFill.Position = UDim2.fromOffset(
-	top2D.X - width/2 - HEALTH_WIDTH - 2,
-	top2D.Y + (height * (1 - hpPercent))
-)
+			esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
+			esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
+			esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
+			esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
 			esp.healthFill.BackgroundColor3 = HEALTH_GREEN
 
 			if snapEnabled then
@@ -412,4 +359,4 @@ end)
 
 startESP()
 
-print("=== 2D BOX ESP READY (broken) ===")
+print("=== 2D BOX ESP READY (Potential Last Fix) ===")
