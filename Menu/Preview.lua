@@ -460,52 +460,46 @@ end
 		-- 8 CORNER 2D PROJECTION (PIXEL PERFECT)
 		--------------------------------------------------------
 
-		if preview2DBox then
+if preview2DBox then
 
-			local corners = {
-				cf * CFrame.new( size.X/2,  size.Y/2,  size.Z/2),
-				cf * CFrame.new(-size.X/2,  size.Y/2,  size.Z/2),
-				cf * CFrame.new( size.X/2, -size.Y/2,  size.Z/2),
-				cf * CFrame.new(-size.X/2, -size.Y/2,  size.Z/2),
-				cf * CFrame.new( size.X/2,  size.Y/2, -size.Z/2),
-				cf * CFrame.new(-size.X/2,  size.Y/2, -size.Z/2),
-				cf * CFrame.new( size.X/2, -size.Y/2, -size.Z/2),
-				cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2),
-			}
+	local corners = {
+		cf * CFrame.new( size.X/2,  size.Y/2,  size.Z/2),
+		cf * CFrame.new(-size.X/2,  size.Y/2,  size.Z/2),
+		cf * CFrame.new( size.X/2, -size.Y/2,  size.Z/2),
+		cf * CFrame.new(-size.X/2, -size.Y/2,  size.Z/2),
+		cf * CFrame.new( size.X/2,  size.Y/2, -size.Z/2),
+		cf * CFrame.new(-size.X/2,  size.Y/2, -size.Z/2),
+		cf * CFrame.new( size.X/2, -size.Y/2, -size.Z/2),
+		cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2),
+	}
 
-			local minX, minY = math.huge, math.huge
-			local maxX, maxY = -math.huge, -math.huge
+	local minX, minY = math.huge, math.huge
+	local maxX, maxY = -math.huge, -math.huge
 
-for _, cornerCF in ipairs(corners) do
-	local screenPos = cam:WorldToViewportPoint(cornerCF.Position)
+	for _, cornerCF in ipairs(corners) do
+		local screenPos = cam:WorldToViewportPoint(cornerCF.Position)
 
-	minX = math.min(minX, screenPos.X)
-	minY = math.min(minY, screenPos.Y)
-	maxX = math.max(maxX, screenPos.X)
-	maxY = math.max(maxY, screenPos.Y)
+		minX = math.min(minX, screenPos.X)
+		minY = math.min(minY, screenPos.Y)
+		maxX = math.max(maxX, screenPos.X)
+		maxY = math.max(maxY, screenPos.Y)
+	end
+
+	if maxX > minX and maxY > minY then
+
+		local offsetX = minX - viewport.AbsolutePosition.X
+		local offsetY = minY - viewport.AbsolutePosition.Y
+
+		local width = maxX - minX
+		local height = maxY - minY
+
+		preview2DBox.Size = UDim2.fromOffset(width, height)
+		preview2DBox.Position = UDim2.fromOffset(offsetX, offsetY)
+		preview2DBox.Visible = true
+	else
+		preview2DBox.Visible = false
+	end
 end
-
-			if maxX > minX and maxY > minY then
-				local panelPos = previewPanel.AbsolutePosition
-
-				local relativeX = minX - panelPos.X
-				local relativeY = minY - panelPos.Y
-
-				preview2DBox.Size = UDim2.fromOffset(
-					maxX - minX,
-					maxY - minY
-				)
-
-				preview2DBox.Position = UDim2.fromOffset(
-					relativeX,
-					relativeY
-				)
-
-				preview2DBox.Visible = true
-			else
-				preview2DBox.Visible = false
-			end
-		end
 
 		--------------------------------------------------------
 		-- 3D BOX
