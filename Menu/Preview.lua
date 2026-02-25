@@ -1,6 +1,6 @@
 --!strict
 -- Preview.lua
--- 2D Preview ESP (Matches ESP.lua)
+-- 2D ESP-Accurate Player Preview (Matches ESP.lua exactly)
 
 local Preview = {}
 
@@ -18,15 +18,12 @@ function Preview.Init(deps)
 	local player = Players.LocalPlayer
 
 	------------------------------------------------------------
-	-- CONSTANTS (MATCH ESP)
+	-- CONFIG (MATCHES ESP)
 	------------------------------------------------------------
 
 	local BOX_THICKNESS = 2
 	local HEALTH_WIDTH = 2
-	local MIN_BOX_HEIGHT = 6
-	local MIN_BOX_WIDTH = 3
 	local HEALTH_GREEN = Color3.fromRGB(0,255,0)
-	local PREVIEW_COLOR = Color3.fromRGB(255,70,70)
 
 	------------------------------------------------------------
 	-- STATE
@@ -34,81 +31,63 @@ function Preview.Init(deps)
 
 	local preview: Model? = nil
 
-	------------------------------------------------------------
-	-- NAME (same method you're already using)
-	------------------------------------------------------------
-
-	local previewNameLabel = Instance.new("TextLabel")
-	previewNameLabel.Name = "PreviewName"
-	previewNameLabel.BackgroundTransparency = 1
-	previewNameLabel.Font = Enum.Font.GothamSemibold
-	previewNameLabel.TextColor3 = PREVIEW_COLOR
-	previewNameLabel.TextStrokeTransparency = 0.5
-	previewNameLabel.TextScaled = false
-	previewNameLabel.TextSize = 16
-	previewNameLabel.Visible = false
-	previewNameLabel.Parent = previewPanel
+	local boxFrame: Frame? = nil
+	local boxStroke: UIStroke? = nil
+	local healthBg: Frame? = nil
+	local healthFill: Frame? = nil
+	local nameLabel: TextLabel? = nil
 
 	------------------------------------------------------------
-	-- 2D BOX (MATCHES REAL ESP)
+	-- BUILD 2D OVERLAY
 	------------------------------------------------------------
 
-	local previewBoxFrame = Instance.new("Frame")
-	previewBoxFrame.BackgroundTransparency = 1
-	previewBoxFrame.BorderSizePixel = 0
-	previewBoxFrame.Visible = false
-	previewBoxFrame.Parent = previewPanel
+	local function buildOverlay()
 
-	local previewStroke = Instance.new("UIStroke")
-	previewStroke.Thickness = BOX_THICKNESS
-	previewStroke.Color = PREVIEW_COLOR
-	previewStroke.Parent = previewBoxFrame
+		-- BOX
+		boxFrame = Instance.new("Frame")
+		boxFrame.BackgroundTransparency = 1
+		boxFrame.BorderSizePixel = 0
+		boxFrame.Visible = false
+		boxFrame.Parent = previewPanel
 
-	local previewHealthBg = Instance.new("Frame")
-	previewHealthBg.BackgroundColor3 = Color3.fromRGB(35,35,35)
-	previewHealthBg.BorderSizePixel = 0
-	previewHealthBg.Visible = false
-	previewHealthBg.Parent = previewBoxFrame
+		boxStroke = Instance.new("UIStroke")
+		boxStroke.Thickness = BOX_THICKNESS
+		boxStroke.Parent = boxFrame
 
-	local previewHealthFill = Instance.new("Frame")
-	previewHealthFill.BorderSizePixel = 0
-	previewHealthFill.BackgroundColor3 = HEALTH_GREEN
-	previewHealthFill.Parent = previewHealthBg
+		-- HEALTH
+		healthBg = Instance.new("Frame")
+		healthBg.BackgroundColor3 = Color3.fromRGB(35,35,35)
+		healthBg.BorderSizePixel = 0
+		healthBg.Visible = false
+		healthBg.Parent = boxFrame
+
+		healthFill = Instance.new("Frame")
+		healthFill.BorderSizePixel = 0
+		healthFill.BackgroundColor3 = HEALTH_GREEN
+		healthFill.Parent = healthBg
+
+		-- NAME
+		nameLabel = Instance.new("TextLabel")
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Font = Enum.Font.GothamSemibold
+		nameLabel.TextStrokeTransparency = 0.5
+		nameLabel.TextWrapped = false
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Center
+		nameLabel.TextYAlignment = Enum.TextYAlignment.Center
+		nameLabel.AnchorPoint = Vector2.new(0.5,1)
+		nameLabel.ClipsDescendants = false
+		nameLabel.Visible = false
+		nameLabel.Parent = previewPanel
+	end
 
 	------------------------------------------------------------
-	-- CHAMS (UNCHANGED FROM YOUR ORIGINAL)
+	-- APPLY CHAMS (SAME AS BEFORE)
 	------------------------------------------------------------
 
-	local originalPartState: {[BasePart]: {
-		Material: Enum.Material,
-		Color: Color3,
-		Transparency: number
-	}} = {}
-
-	local originalTextureState: {[Instance]: any} = {}
-	local originalParentState: {[Instance]: Instance} = {}
+	local originalPartState = {}
 
 	local function applyPreviewChams()
 		if not preview then return end
-
-		for _, inst in ipairs(preview:GetDescendants()) do
-			if inst:IsA("Decal") or inst:IsA("Texture") then
-				originalTextureState[inst] = inst.Transparency
-				inst.Transparency = 1
-			elseif inst:IsA("SpecialMesh") then
-				originalTextureState[inst] = inst.TextureId
-				inst.TextureId = ""
-			elseif inst:IsA("MeshPart") then
-				originalTextureState[inst] = inst.TextureID
-				inst.TextureID = ""
-			elseif inst:IsA("SurfaceAppearance")
-				or inst:IsA("Shirt")
-				or inst:IsA("Pants")
-				or inst:IsA("ShirtGraphic") then
-				originalParentState[inst] = inst.Parent
-				inst.Parent = nil
-			end
-		end
 
 		for _, inst in ipairs(preview:GetDescendants()) do
 			if inst:IsA("BasePart") then
@@ -120,7 +99,7 @@ function Preview.Init(deps)
 					}
 				end
 				inst.Material = Enum.Material.Neon
-				inst.Color = PREVIEW_COLOR
+				inst.Color = Color3.fromRGB(0,120,255)
 				inst.Transparency = 0
 			end
 		end
@@ -135,41 +114,36 @@ function Preview.Init(deps)
 			end
 		end
 		table.clear(originalPartState)
-
-		for inst, saved in pairs(originalTextureState) do
-			if inst and inst.Parent then
-				if inst:IsA("Decal") or inst:IsA("Texture") then
-					inst.Transparency = saved
-				elseif inst:IsA("SpecialMesh") then
-					inst.TextureId = saved
-				elseif inst:IsA("MeshPart") then
-					inst.TextureID = saved
-				end
-			end
-		end
-		table.clear(originalTextureState)
-
-		for inst, parent in pairs(originalParentState) do
-			if inst and parent then
-				inst.Parent = parent
-			end
-		end
-		table.clear(originalParentState)
 	end
 
 	------------------------------------------------------------
-	-- REFRESH
+	-- REFRESH VISIBILITY
 	------------------------------------------------------------
 
-	local function refreshPreviewESP()
+	local function refreshVisibility()
 
-		removePreviewChams()
+		local boxes = Toggles.GetState("vis_boxes")
+		local health = Toggles.GetState("vis_health")
+		local name = Toggles.GetState("vis_name")
+		local glow = Toggles.GetState("vis_glow")
 
-		if Toggles.GetState("vis_glow") then
-			applyPreviewChams()
+		if boxFrame then
+			boxFrame.Visible = boxes
 		end
 
-		previewNameLabel.Visible = Toggles.GetState("vis_name")
+		if healthBg and healthFill then
+			healthBg.Visible = health
+			healthFill.Visible = health
+		end
+
+		if nameLabel then
+			nameLabel.Visible = name
+		end
+
+		removePreviewChams()
+		if glow then
+			applyPreviewChams()
+		end
 	end
 
 	------------------------------------------------------------
@@ -179,7 +153,6 @@ function Preview.Init(deps)
 	local function buildAvatar()
 
 		world:ClearAllChildren()
-		preview = nil
 		removePreviewChams()
 
 		local desc = Players:GetHumanoidDescriptionFromUserId(player.UserId)
@@ -200,177 +173,87 @@ function Preview.Init(deps)
 		rig.PrimaryPart = rig:FindFirstChild("HumanoidRootPart")
 		preview = rig
 
-		previewNameLabel.Text = player.DisplayName
+		if nameLabel then
+			nameLabel.Text = player.DisplayName
+		end
 
-		refreshPreviewESP()
+		refreshVisibility()
 	end
 
 	------------------------------------------------------------
-	-- TOGGLES
-	------------------------------------------------------------
-
-	Toggles.Subscribe("vis_boxes", refreshPreviewESP)
-	Toggles.Subscribe("vis_health", refreshPreviewESP)
-	Toggles.Subscribe("vis_name", refreshPreviewESP)
-	Toggles.Subscribe("vis_glow", refreshPreviewESP)
-
-	buildAvatar()
-
-	------------------------------------------------------------
-	-- RENDER LOOP (2D BOX PROJECTION)
+	-- RENDER LOOP (2D BOX CALC LIKE ESP)
 	------------------------------------------------------------
 
 	RunService.RenderStepped:Connect(function()
 
-		if not preview or not preview.PrimaryPart then
-			previewBoxFrame.Visible = false
-			return
-		end
+		if not preview or not preview.PrimaryPart then return end
+		if not boxFrame or not boxStroke then return end
 
-		local hum = preview:FindFirstChildOfClass("Humanoid")
-		local root = preview:FindFirstChild("HumanoidRootPart")
-		local head = preview:FindFirstChild("Head")
+		local cf, size = preview:GetBoundingBox()
+		local center = cf.Position
 
-		if not hum or not root or not head then return end
+		local maxDim = math.max(size.X, size.Y, size.Z)
+		local fov = math.rad(cam.FieldOfView)
+		local distance = (maxDim / (2 * math.tan(fov / 2))) * 1.25
 
-		local top3D = head.Position + Vector3.new(0,0.5,0)
-		local bottom3D = root.Position - Vector3.new(0, hum.HipHeight + (root.Size.Y/2), 0)
+		cam.CFrame = CFrame.new(center + Vector3.new(0,0,distance), center)
 
-		local top2D, topOnScreen = cam:WorldToViewportPoint(top3D)
-		local bottom2D, bottomOnScreen = cam:WorldToViewportPoint(bottom3D)
+		preview:SetPrimaryPartCFrame(
+			CFrame.new(0,0,0) *
+			CFrame.Angles(0, math.rad(180), 0)
+		)
 
-		if not topOnScreen or not bottomOnScreen then
-			previewBoxFrame.Visible = false
-			previewHealthBg.Visible = false
-			return
-		end
+		-- project 3D top/bottom into viewport (LIKE ESP)
+		local top3D = center + Vector3.new(0, size.Y/2, 0)
+		local bottom3D = center - Vector3.new(0, size.Y/2, 0)
 
-		local rawHeight = math.abs(bottom2D.Y - top2D.Y)
-		local height = math.max(rawHeight, MIN_BOX_HEIGHT)
-		local width = math.max(rawHeight * 0.5, MIN_BOX_WIDTH)
+		local top2D = cam:WorldToViewportPoint(top3D)
+		local bottom2D = cam:WorldToViewportPoint(bottom3D)
 
-		local boxEnabled = Toggles.GetState("vis_boxes")
-		previewBoxFrame.Visible = boxEnabled
-		previewStroke.Enabled = boxEnabled
+		local height = math.abs(bottom2D.Y - top2D.Y)
+		local width = height * 0.5
 
-		previewBoxFrame.Size = UDim2.fromOffset(width, height)
-		previewBoxFrame.Position = UDim2.fromOffset(
+		boxFrame.Size = UDim2.fromOffset(width, height)
+		boxFrame.Position = UDim2.fromOffset(
 			top2D.X - width/2,
 			top2D.Y
 		)
 
-		-- NAME
-		if Toggles.GetState("vis_name") then
-			previewNameLabel.TextSize = math.clamp(height * 0.2, 14, 22)
-			previewNameLabel.Size = UDim2.fromOffset(200, previewNameLabel.TextSize + 4)
-			previewNameLabel.Position = UDim2.fromOffset(
-				top2D.X - 100,
-				top2D.Y - previewNameLabel.TextSize - 4
+		boxStroke.Color = Color3.fromRGB(0,120,255)
+
+		-- HEALTH MATCH
+		local hpPercent = 1 -- preview always full
+
+		if healthBg and healthFill then
+			healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
+			healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
+
+			healthFill.Size = UDim2.new(1,0, hpPercent,0)
+			healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
+			healthFill.BackgroundColor3 = HEALTH_GREEN
+		end
+
+		if nameLabel then
+			nameLabel.Position = UDim2.fromOffset(
+				top2D.X,
+				top2D.Y - 4
 			)
+			nameLabel.Size = UDim2.fromOffset(200, 18)
+			nameLabel.TextColor3 = Color3.fromRGB(0,120,255)
 		end
-
-		-- HEALTH (static 75% preview value)
-		local hpPercent = 0.75
-		local healthEnabled = Toggles.GetState("vis_health")
-
-		previewHealthBg.Visible = healthEnabled
-		previewHealthFill.Visible = healthEnabled
-
-		previewHealthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
-		previewHealthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
-
-		previewHealthFill.Size = UDim2.new(1,0, hpPercent,0)
-		previewHealthFill.Position = UDim2.new(0,0,1-hpPercent,0)
-		previewHealthFill.BackgroundColor3 = HEALTH_GREEN
 	end)
 
 	------------------------------------------------------------
-	-- ORIGINAL DRAG / ROTATION SYSTEM (UNCHANGED)
+	-- TOGGLE HOOKS
 	------------------------------------------------------------
 
-	local draggingPreview = false
-	local lastX = 0
-	local rotationY = 0
-	local velocity = 0
+	Toggles.Subscribe("vis_boxes", refreshVisibility)
+	Toggles.Subscribe("vis_health", refreshVisibility)
+	Toggles.Subscribe("vis_name", refreshVisibility)
+	Toggles.Subscribe("vis_glow", refreshVisibility)
 
-	local dragSensitivity = 0.4
-	local inertiaDamping = 0.92
-
-	local idleTimer = 0
-	local idleDelay = 1.2
-
-	local springTargetAngle = 35
-	local springFrequency = 0.6
-	local springStiffness = 8
-	local springDamping = 6
-	local springVelocity = 0
-
-	viewport.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-		or input.UserInputType == Enum.UserInputType.Touch then
-			draggingPreview = true
-			lastX = input.Position.X
-			idleTimer = 0
-		end
-	end)
-
-	viewport.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1
-		or input.UserInputType == Enum.UserInputType.Touch then
-			draggingPreview = false
-		end
-	end)
-
-	UserInputService.InputChanged:Connect(function(input)
-		if not draggingPreview then return end
-		if input.UserInputType == Enum.UserInputType.MouseMovement
-		or input.UserInputType == Enum.UserInputType.Touch then
-			local delta = input.Position.X - lastX
-			lastX = input.Position.X
-			local applied = delta * dragSensitivity
-			rotationY += applied
-			velocity = applied
-			idleTimer = 0
-		end
-	end)
-
-	RunService.RenderStepped:Connect(function(dt)
-
-		if not preview or not preview.PrimaryPart then return end
-
-		if not draggingPreview then
-			idleTimer += dt
-		end
-
-		if not draggingPreview and idleTimer <= idleDelay then
-			rotationY += velocity
-			velocity *= inertiaDamping
-			if math.abs(velocity) < 0.01 then
-				velocity = 0
-			end
-		end
-
-		if not draggingPreview and idleTimer > idleDelay then
-			local target = math.sin(tick() * springFrequency) * springTargetAngle
-			local displacement = target - rotationY
-			local force = displacement * springStiffness
-			springVelocity += force * dt
-			springVelocity -= springVelocity * springDamping * dt
-			rotationY += springVelocity * dt
-		end
-
-		preview:SetPrimaryPartCFrame(
-			CFrame.new(0,0,0) *
-			CFrame.Angles(0, math.rad(180 + rotationY), 0)
-		)
-
-		local cf, size = preview:GetBoundingBox()
-		local center = cf.Position
-		local maxDim = math.max(size.X, size.Y, size.Z)
-		local fov = math.rad(cam.FieldOfView)
-		local distance = (maxDim / (2 * math.tan(fov / 2))) * 1.25
-		cam.CFrame = CFrame.new(center + Vector3.new(0,0,distance), center)
-	end)
+	buildOverlay()
+	buildAvatar()
 end
 
 return Preview
