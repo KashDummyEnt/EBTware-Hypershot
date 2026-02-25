@@ -1,7 +1,5 @@
 --!strict
--- ESP.lua (Fully Modular Toggle-Wired)
--- Master Toggle: vis_esp
--- Sub Toggles:
+-- ESP.lua (No Master Toggle Version)
 -- vis_glow
 -- vis_boxes
 -- vis_health
@@ -22,7 +20,7 @@ if not Toggles then
 	return
 end
 
-print("=== 2D BOX ESP LOADED (MODULAR) ===")
+print("=== 2D BOX ESP LOADED (NO MASTER) ===")
 
 ------------------------------------------------------------------
 -- CONFIG
@@ -44,14 +42,13 @@ local MIN_BOX_WIDTH = 3
 -- STATE
 ------------------------------------------------------------------
 
-local enabled = false
 local renderConnection: RBXScriptConnection? = nil
 
-local glowEnabled = true
-local boxEnabled = true
-local healthEnabled = true
-local nameEnabled = true
-local snapEnabled = true
+local glowEnabled = Toggles.GetState("vis_glow", true)
+local boxEnabled = Toggles.GetState("vis_boxes", true)
+local healthEnabled = Toggles.GetState("vis_health", true)
+local nameEnabled = Toggles.GetState("vis_name", true)
+local snapEnabled = Toggles.GetState("vis_snap", true)
 
 type ESPData = {
 	box: Frame,
@@ -90,15 +87,25 @@ local function isGreen(c: Color3): boolean
 	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
 end
 
-local function getHighlightColor(model: Model): Color3
+local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
 	if not highlight then return BLUE end
 
-	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	local isGreenHighlight = isGreen(highlight.FillColor) or isGreen(highlight.OutlineColor)
 
-	if isGreen(highlight.FillColor) or isGreen(highlight.OutlineColor) then
-		highlight.FillColor = BLUE
-		highlight.OutlineColor = BLUE
+	if glowEnabled then
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+
+		if isGreenHighlight then
+			highlight.FillColor = BLUE
+			highlight.OutlineColor = BLUE
+		end
+	else
+		if isGreenHighlight then
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		else
+			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		end
 	end
 
 	return highlight.FillColor
@@ -219,31 +226,17 @@ local function destroyESP(model: Model)
 	end
 end
 
-local function fullCleanup()
-	for model,_ in pairs(espByModel) do
-		destroyESP(model)
-	end
-
-	if screenGui then
-		screenGui:Destroy()
-		screenGui = nil
-	end
-end
-
 ------------------------------------------------------------------
 -- RENDER LOOP
 ------------------------------------------------------------------
 
 local function startESP()
 
-	if enabled then return end
-	enabled = true
+	if renderConnection then return end
 
 	createRoot()
 
 	renderConnection = RunService.RenderStepped:Connect(function()
-
-		if not enabled then return end
 
 		local localChar = LocalPlayer.Character
 		if not localChar then return end
@@ -253,12 +246,6 @@ local function startESP()
 		if not localRoot or not localHum then return end
 
 		local origin = localRoot.Position - Vector3.new(0, localHum.HipHeight + (localRoot.Size.Y / 2), 0)
-
-		for model,_ in pairs(espByModel) do
-			if not model:IsDescendantOf(workspace) then
-				destroyESP(model)
-			end
-		end
 
 		for _, model in ipairs(workspace:GetDescendants()) do
 			if not model:IsA("Model") then continue end
@@ -274,11 +261,7 @@ local function startESP()
 				continue
 			end
 
-			local color = BLUE
-
-			if glowEnabled then
-				color = getHighlightColor(model)
-			end
+			local color = handleHighlight(model)
 
 			local top3D = head.Position + Vector3.new(0,0.5,0)
 			local bottom3D = root.Position - Vector3.new(0,hum.HipHeight + (root.Size.Y/2),0)
@@ -295,15 +278,13 @@ local function startESP()
 
 			local rawHeight = math.abs(bottom2D.Y - top2D.Y)
 			local height = math.max(rawHeight, MIN_BOX_HEIGHT)
-			local rawWidth = rawHeight * 0.5
-			local width = math.max(rawWidth, MIN_BOX_WIDTH)
+			local width = math.max(rawHeight * 0.5, MIN_BOX_WIDTH)
 
 			local esp = getESP(model)
-			local box = esp.box
 
-			box.Visible = boxEnabled
-			box.Size = UDim2.fromOffset(width, height)
-			box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
+			esp.box.Visible = boxEnabled
+			esp.box.Size = UDim2.fromOffset(width, height)
+			esp.box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
 
 			esp.stroke.Enabled = boxEnabled
 			esp.stroke.Color = color
@@ -332,11 +313,9 @@ local function startESP()
 			if snapEnabled then
 				local dir = bottom3D - origin
 				local len = dir.Magnitude
-
 				if len > 0.1 then
 					local mid = origin + dir*0.5
 					local snap = getSnap(model)
-
 					snap.part.CFrame = CFrame.lookAt(mid, bottom3D)
 					snap.ad.Size = Vector3.new(SNAP_THICKNESS,SNAP_THICKNESS,len)
 					snap.ad.Color3 = color
@@ -351,25 +330,9 @@ local function startESP()
 	end)
 end
 
-local function stopESP()
-	if not enabled then return end
-	enabled = false
-
-	if renderConnection then
-		renderConnection:Disconnect()
-		renderConnection = nil
-	end
-
-	fullCleanup()
-end
-
 ------------------------------------------------------------------
--- TOGGLE BINDINGS
+-- TOGGLES
 ------------------------------------------------------------------
-
-Toggles.Subscribe("vis_esp", function(state)
-	if state then startESP() else stopESP() end
-end)
 
 Toggles.Subscribe("vis_glow", function(state)
 	glowEnabled = state
@@ -391,8 +354,6 @@ Toggles.Subscribe("vis_snap", function(state)
 	snapEnabled = state
 end)
 
-if Toggles.GetState("vis_esp", false) then
-	startESP()
-end
+startESP()
 
-print("=== 2D BOX ESP READY MAYBE TEST (MODULAR) ===")
+print("=== 2D BOX ESP READY (NO MASTER) ===")
