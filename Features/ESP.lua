@@ -258,9 +258,12 @@ local function onToggleChanged(state: boolean)
 	end
 end
 
+local alreadyOn = Toggles.GetState("vis_esp", false)
+
 Toggles.Subscribe("vis_esp", onToggleChanged)
 
--- Apply current state immediately (deterministic)
-onToggleChanged(Toggles.GetState("vis_esp", false))
+if alreadyOn then
+	onToggleChanged(true)
+end
 
 return {}
