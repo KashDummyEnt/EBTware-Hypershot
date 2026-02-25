@@ -470,17 +470,21 @@ end
 			local projectedWidth = projectedHeight * (size.X / size.Y)
 
 			-- Slight visual trim to perfectly match 3D box
-			projectedHeight *= 0.98
-			projectedWidth *= 0.98
+				projectedHeight *= 1.2
+				projectedWidth *= 1.2
 
-			local centerX = viewportSize.X / 2
-			local centerY = viewportSize.Y / 2
+local screenPos, onScreen = cam:WorldToViewportPoint(cf.Position)
 
-			preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
-			preview2DBox.Position = UDim2.fromOffset(
-				centerX - projectedWidth/2,
-				centerY - projectedHeight/2
-			)
+if onScreen then
+	preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+	preview2DBox.Position = UDim2.fromOffset(
+		screenPos.X - projectedWidth/2,
+		screenPos.Y - projectedHeight/2
+	)
+	preview2DBox.Visible = true
+else
+	preview2DBox.Visible = false
+end
 
 			preview2DBox.Visible = true
 		end
