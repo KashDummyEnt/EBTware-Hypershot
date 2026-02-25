@@ -442,46 +442,26 @@ end
 
 		local cf, size = preview:GetBoundingBox()
 
-			if preview2DBox then
+if preview2DBox then
 
-	local corners = {
-		cf * CFrame.new( size.X/2,  size.Y/2,  size.Z/2),
-		cf * CFrame.new(-size.X/2,  size.Y/2,  size.Z/2),
-		cf * CFrame.new( size.X/2, -size.Y/2,  size.Z/2),
-		cf * CFrame.new(-size.X/2, -size.Y/2,  size.Z/2),
-		cf * CFrame.new( size.X/2,  size.Y/2, -size.Z/2),
-		cf * CFrame.new(-size.X/2,  size.Y/2, -size.Z/2),
-		cf * CFrame.new( size.X/2, -size.Y/2, -size.Z/2),
-		cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2),
-	}
+	local viewportSize = viewport.AbsoluteSize
 
-	local minX, minY = math.huge, math.huge
-	local maxX, maxY = -math.huge, -math.huge
+	-- tweak this if box looks too big/small
+	local scaleFactor = viewportSize.Y / 3
 
-	for _, corner in ipairs(corners) do
-		local screenPos, onScreen = cam:WorldToViewportPoint(corner.Position)
+	local boxWidth = size.X * scaleFactor
+	local boxHeight = size.Y * scaleFactor
 
-		if onScreen then
-			minX = math.min(minX, screenPos.X)
-			minY = math.min(minY, screenPos.Y)
-			maxX = math.max(maxX, screenPos.X)
-			maxY = math.max(maxY, screenPos.Y)
-		end
-	end
+	local centerX = viewportSize.X / 2
+	local centerY = viewportSize.Y / 2
 
-	if minX ~= math.huge then
-		local panelPos = previewPanel.AbsolutePosition
-local panelSize = previewPanel.AbsoluteSize
+	preview2DBox.Size = UDim2.fromOffset(boxWidth, boxHeight)
+	preview2DBox.Position = UDim2.fromOffset(
+		centerX - boxWidth/2,
+		centerY - boxHeight/2
+	)
 
-local relativeX = minX - panelPos.X
-local relativeY = minY - panelPos.Y
-
-preview2DBox.Size = UDim2.fromOffset(maxX - minX, maxY - minY)
-preview2DBox.Position = UDim2.fromOffset(relativeX, relativeY)
-		preview2DBox.Visible = true
-	else
-		preview2DBox.Visible = false
-	end
+	preview2DBox.Visible = true
 end
 		local center = cf.Position
 
