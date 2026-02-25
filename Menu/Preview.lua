@@ -21,7 +21,7 @@ function Preview.Init(deps)
 	-- BUILD AVATAR + PREVIEW ESP
 	------------------------------------------------------------
 
-	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 255)
+	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 0)
 
 	local preview: Model? = nil
 	local previewBox: Part? = nil
@@ -35,7 +35,7 @@ function Preview.Init(deps)
 
 	local previewNameLabel = Instance.new("TextLabel")
 	previewNameLabel.Name = "PreviewName"
-previewNameLabel.Size = UDim2.new(1, -32, 0, 20)
+previewNameLabel.Size = UDim2.fromOffset(100, 20)
 previewNameLabel.Position = UDim2.fromOffset(16, 0)
 	previewNameLabel.BackgroundTransparency = 1
 	previewNameLabel.Font = Enum.Font.GothamSemibold
@@ -495,6 +495,7 @@ end
 
 -- NAME (always based on projection)
 if previewNameLabel.Visible then
+	previewNameLabel.Size = UDim2.fromOffset(projectedWidth, 20)
 	previewNameLabel.Position = UDim2.fromOffset(
 		centerX - projectedWidth/2,
 		topY - 22
