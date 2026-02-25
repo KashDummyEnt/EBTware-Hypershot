@@ -445,20 +445,25 @@ end
 if preview2DBox then
 
 	local viewportSize = viewport.AbsoluteSize
+	local fov = math.rad(cam.FieldOfView)
 
-	-- tweak this if box looks too big/small
-	local scaleFactor = viewportSize.Y / 3
+	-- Distance from camera to model center
+	local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
 
-	local boxWidth = size.X * scaleFactor
-	local boxHeight = size.Y * scaleFactor
+	-- Project height properly using perspective math
+	local projectedHeight =
+		(size.Y / camToModel) *
+		(viewportSize.Y / (2 * math.tan(fov / 2)))
+
+	local projectedWidth = projectedHeight * (size.X / size.Y)
 
 	local centerX = viewportSize.X / 2
 	local centerY = viewportSize.Y / 2
 
-	preview2DBox.Size = UDim2.fromOffset(boxWidth, boxHeight)
+	preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
 	preview2DBox.Position = UDim2.fromOffset(
-		centerX - boxWidth/2,
-		centerY - boxHeight/2
+		centerX - projectedWidth/2,
+		centerY - projectedHeight/2
 	)
 
 	preview2DBox.Visible = true
