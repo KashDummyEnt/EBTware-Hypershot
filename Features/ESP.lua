@@ -194,12 +194,16 @@ local function createESP(model: Model): ESPData
 	healthFill.BackgroundColor3 = HEALTH_GREEN
 	healthFill.Parent = healthBg
 
-	local name = Instance.new("TextLabel")
-	name.BackgroundTransparency = 1
-	name.TextScaled = true
-	name.Font = Enum.Font.GothamSemibold
-	name.TextStrokeTransparency = 0.5
-	name.Parent = box
+local name = Instance.new("TextLabel")
+name.BackgroundTransparency = 1
+name.TextScaled = false
+name.Font = Enum.Font.GothamSemibold
+name.TextStrokeTransparency = 0.5
+name.TextWrapped = false
+name.TextXAlignment = Enum.TextXAlignment.Center
+name.TextYAlignment = Enum.TextYAlignment.Center
+name.ClipsDescendants = true
+name.Parent = box
 
 	local data: ESPData = {
 		box = box,
@@ -339,14 +343,15 @@ local function startESP()
 esp.name.Visible = nameEnabled
 esp.name.Text = displayName
 esp.name.TextColor3 = color
-esp.name.TextScaled = false
 
--- Dynamic font scaling based on box height
-local textSize = math.clamp(height * 0.18, 12, 20)
+-- stable scaling
+local textSize = math.clamp(height * 0.2, 14, 22)
 esp.name.TextSize = textSize
 
-esp.name.Size = UDim2.new(1,0,0,textSize + 2)
-esp.name.Position = UDim2.new(0,0,0,-(textSize + 4))
+-- center anchor so it doesn't drift
+esp.name.AnchorPoint = Vector2.new(0.5, 1)
+esp.name.Position = UDim2.new(0.5, 0, 0, -4)
+esp.name.Size = UDim2.new(1, 0, 0, textSize + 4)
 
 			local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
 
