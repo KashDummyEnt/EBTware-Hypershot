@@ -42,94 +42,104 @@ function Preview.Init(deps)
 	previewNameLabel.Visible = false
 	previewNameLabel.Parent = previewPanel
 
-	------------------------------------------------------------
-	-- HEALTH BAR
-	------------------------------------------------------------
+------------------------------------------------------------
+-- HEALTH BAR (LEFT SIDE VERTICAL)
+------------------------------------------------------------
 
-	local previewHealthContainer = Instance.new("Frame")
-	previewHealthContainer.Size = UDim2.new(1, -32, 0, 8)
-	previewHealthContainer.Position = UDim2.new(0, 16, 1, -24)
-	previewHealthContainer.BackgroundTransparency = 1
-	previewHealthContainer.Visible = false
-	previewHealthContainer.Parent = previewPanel
+local HEALTH_WIDTH = 6
 
-	local back = Instance.new("Frame")
-	back.Size = UDim2.new(1, 0, 1, 0)
-	back.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-	back.BorderSizePixel = 0
-	back.Parent = previewHealthContainer
+local previewHealthContainer = Instance.new("Frame")
+previewHealthContainer.Size = UDim2.new(0, HEALTH_WIDTH, 1, -32)
+previewHealthContainer.Position = UDim2.new(0, 8, 0, 24)
+previewHealthContainer.BackgroundTransparency = 1
+previewHealthContainer.Visible = false
+previewHealthContainer.Parent = previewPanel
 
-	local backCorner = Instance.new("UICorner")
-	backCorner.CornerRadius = UDim.new(1, 0)
-	backCorner.Parent = back
+local back = Instance.new("Frame")
+back.Size = UDim2.new(1, 0, 1, 0)
+back.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+back.BorderSizePixel = 0
+back.Parent = previewHealthContainer
 
-	local fill = Instance.new("Frame")
+local backCorner = Instance.new("UICorner")
+backCorner.CornerRadius = UDim.new(1, 0)
+backCorner.Parent = back
+
+local fill = Instance.new("Frame")
+fill.Size = UDim2.new(1, 0, 1, 0)
+fill.Position = UDim2.new(0, 0, 0, 0)
+fill.BorderSizePixel = 0
+fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+fill.Parent = back
+
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(1, 0)
+fillCorner.Parent = fill
+
+------------------------------------------------------------
+-- PREVIEW HEALTH LOOP (VERTICAL LEFT STYLE)
+------------------------------------------------------------
+
+local previewHealthRunning = false
+local previewHealthConn: RBXScriptConnection? = nil
+local previewDirection = -1
+local previewSpeed = 0.4
+
+local function startPreviewHealthAnimation()
+
+	if previewHealthRunning then return end
+
+	previewHealthRunning = true
+	previewDirection = -1
+
+	-- Full health at start
 	fill.Size = UDim2.new(1, 0, 1, 0)
-	fill.BorderSizePixel = 0
-	fill.Parent = back
+	fill.Position = UDim2.new(0, 0, 0, 0)
+	fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 
-	local fillCorner = Instance.new("UICorner")
-	fillCorner.CornerRadius = UDim.new(1, 0)
-	fillCorner.Parent = fill
-
-	------------------------------------------------------------
-	-- PREVIEW HEALTH LOOP
-	------------------------------------------------------------
-
-	local previewHealthRunning = false
-	local previewHealthConn: RBXScriptConnection? = nil
-	local previewDirection = -1
-	local previewSpeed = 0.4
-
-	local function startPreviewHealthAnimation()
-
-		if previewHealthRunning then return end
-
-		previewHealthRunning = true
-		previewDirection = -1
-
-		fill.Size = UDim2.new(1, 0, 1, 0)
-		fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-
-		if previewHealthConn then
-			previewHealthConn:Disconnect()
-			previewHealthConn = nil
-		end
-
-		previewHealthConn = RunService.RenderStepped:Connect(function(dt)
-
-			if not previewHealthRunning then return end
-
-			local currentPct = fill.Size.X.Scale or 1
-			local newPct = currentPct + (previewDirection * previewSpeed * dt)
-
-			if newPct <= 0 then
-				newPct = 0
-				previewDirection = 1
-			elseif newPct >= 1 then
-				newPct = 1
-				previewDirection = -1
-			end
-
-			fill.Size = UDim2.new(newPct, 0, 1, 0)
-
-			fill.BackgroundColor3 = Color3.fromRGB(
-				math.floor(255 * (1 - newPct)),
-				math.floor(255 * newPct),
-				0
-			)
-		end)
+	if previewHealthConn then
+		previewHealthConn:Disconnect()
+		previewHealthConn = nil
 	end
 
-	local function stopPreviewHealthAnimation()
+	previewHealthConn = RunService.RenderStepped:Connect(function(dt)
 
-		previewHealthRunning = false
+		if not previewHealthRunning then return end
 
-		if previewHealthConn then
-			previewHealthConn:Disconnect()
-			previewHealthConn = nil
+		-- Use Y scale for vertical health
+		local currentPct = fill.Size.Y.Scale or 1
+		local newPct = currentPct + (previewDirection * previewSpeed * dt)
+
+		if newPct <= 0 then
+			newPct = 0
+			previewDirection = 1
+		elseif newPct >= 1 then
+			newPct = 1
+			previewDirection = -1
 		end
+
+		-- Vertical fill (bottom → top)
+		fill.Size = UDim2.new(1, 0, newPct, 0)
+		fill.Position = UDim2.new(0, 0, 1 - newPct, 0)
+
+		-- Red → Green gradient
+		fill.BackgroundColor3 = Color3.fromRGB(
+			math.floor(255 * (1 - newPct)),
+			math.floor(255 * newPct),
+			0
+		)
+	end)
+end
+
+local function stopPreviewHealthAnimation()
+
+	previewHealthRunning = false
+
+	if previewHealthConn then
+		previewHealthConn:Disconnect()
+		previewHealthConn = nil
 	end
+end
 
 	------------------------------------------------------------
 	-- CHAMS (FULL RESTORE SYSTEM)
