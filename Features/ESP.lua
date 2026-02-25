@@ -27,6 +27,8 @@ print("=== 2D BOX ESP LOADED (NO MASTER) ===")
 ------------------------------------------------------------------
 
 local BLUE = Color3.fromRGB(0,120,255)
+local GREEN = Color3.fromRGB(0,255,0)
+local RED = Color3.fromRGB(255,0,0)
 local HEALTH_GREEN = Color3.fromRGB(0,255,0)
 
 local SNAP_THICKNESS = 0.05
@@ -84,31 +86,66 @@ local function shouldSkip(model: Model, localChar: Model?): boolean
 end
 
 local function isGreen(c: Color3): boolean
-	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
+	return math.abs(c.R - GREEN.R) < 0.05
+		and math.abs(c.G - GREEN.G) < 0.05
+		and math.abs(c.B - GREEN.B) < 0.05
 end
+
+local function isBlue(c: Color3): boolean
+	return math.abs(c.R - BLUE.R) < 0.05
+		and math.abs(c.G - BLUE.G) < 0.05
+		and math.abs(c.B - BLUE.B) < 0.05
+end
+
+local function isRed(c: Color3): boolean
+	return math.abs(c.R - RED.R) < 0.05
+		and math.abs(c.G - RED.G) < 0.05
+		and math.abs(c.B - RED.B) < 0.05
+end
+
+------------------------------------------------------------------
+-- HIGHLIGHT STATE FIX
+------------------------------------------------------------------
 
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
-	if not highlight then return BLUE end
-
-	local isGreenHighlight = isGreen(highlight.FillColor) or isGreen(highlight.OutlineColor)
-
-	if glowEnabled then
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-
-		if isGreenHighlight then
-			highlight.FillColor = BLUE
-			highlight.OutlineColor = BLUE
-		end
-	else
-		if isGreenHighlight then
-			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		else
-			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		end
+	if not highlight then
+		return BLUE
 	end
 
-	return highlight.FillColor
+	local currentColor = highlight.FillColor
+
+	-- RED state always occluded
+	if isRed(currentColor) then
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		return RED
+	end
+
+	-- GLOW ENABLED → force blue override
+	if glowEnabled then
+		highlight.FillColor = BLUE
+		highlight.OutlineColor = BLUE
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		return BLUE
+	end
+
+	-- GLOW DISABLED
+	-- If currently blue, revert to green
+	if isBlue(currentColor) then
+		highlight.FillColor = GREEN
+		highlight.OutlineColor = GREEN
+		currentColor = GREEN
+	end
+
+	-- GREEN should always stay AlwaysOnTop
+	if isGreen(currentColor) then
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		return GREEN
+	end
+
+	-- fallback safety
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	return currentColor
 end
 
 ------------------------------------------------------------------
