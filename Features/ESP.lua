@@ -52,6 +52,14 @@ local healthEnabled = Toggles.GetState("vis_health", true)
 local nameEnabled = Toggles.GetState("vis_name", true)
 local snapEnabled = Toggles.GetState("vis_snap", true)
 
+-- Track highlight conversions
+type HighlightState = {
+	originalGreen: Color3?,
+	converted: boolean,
+}
+
+local highlightStates: {[Highlight]: HighlightState} = {}
+
 type ESPData = {
 	box: Frame,
 	stroke: UIStroke,
@@ -91,6 +99,10 @@ local function isColor(c: Color3, target: Color3): boolean
 		and math.abs(c.B - target.B) < 0.01
 end
 
+------------------------------------------------------------------
+-- HIGHLIGHT LOGIC (STATEFUL)
+------------------------------------------------------------------
+
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
 	if not highlight then
@@ -101,39 +113,64 @@ local function handleHighlight(model: Model): Color3
 	local outline = highlight.OutlineColor
 
 	local isRed = isColor(fill, RED) or isColor(outline, RED)
-	local isBlue = isColor(fill, BLUE) or isColor(outline, BLUE)
 	local isGreen = isColor(fill, GREEN) or isColor(outline, GREEN)
+	local isBlue = isColor(fill, BLUE) or isColor(outline, BLUE)
 
+	-- Ensure state entry
+	if not highlightStates[highlight] then
+		highlightStates[highlight] = {
+			originalGreen = nil,
+			converted = false,
+		}
+	end
+
+	local state = highlightStates[highlight]
+
+	------------------------------------------------------------------
+	-- GLOW ENABLED
+	------------------------------------------------------------------
 	if glowEnabled then
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 
-		if isGreen then
+		-- Convert original green → blue once
+		if isGreen and not state.converted then
+			state.originalGreen = fill
+			state.converted = true
+
 			highlight.FillColor = BLUE
 			highlight.OutlineColor = BLUE
+
 			return BLUE
 		end
 
 		return highlight.FillColor
-	else
-		if isRed then
-			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-			return RED
-		end
-
-		if isBlue then
-			highlight.FillColor = GREEN
-			highlight.OutlineColor = GREEN
-			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-			return GREEN
-		end
-
-		if isGreen then
-			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-			return GREEN
-		end
-
-		return highlight.FillColor
 	end
+
+	------------------------------------------------------------------
+	-- GLOW DISABLED
+	------------------------------------------------------------------
+
+	if isRed then
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		return RED
+	end
+
+	-- If this was converted earlier, revert it
+	if state.converted and state.originalGreen then
+		highlight.FillColor = state.originalGreen
+		highlight.OutlineColor = state.originalGreen
+		state.converted = false
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		return state.originalGreen
+	end
+
+	-- Pure green stays AlwaysOnTop
+	if isGreen then
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		return GREEN
+	end
+
+	return highlight.FillColor
 end
 
 ------------------------------------------------------------------
@@ -381,4 +418,4 @@ end)
 
 startESP()
 
-print("=== 2D BOX ESP READY TESTING123(NO MASTER) ===")
+print("=== 2D BOX ESP READY (NO MASTER) ===")
