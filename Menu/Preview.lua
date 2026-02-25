@@ -21,7 +21,7 @@ function Preview.Init(deps)
 	-- BUILD AVATAR + PREVIEW ESP
 	------------------------------------------------------------
 
-	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 0)
+	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 255)
 
 	local preview: Model? = nil
 	local previewBox: Part? = nil
