@@ -268,11 +268,7 @@ local pageSettings = createTab("Settings")
 ----------------------------------------------------------------
 -- ADD VISUALS TOGGLES (LAZY ESP LOAD)
 ----------------------------------------------------------------
-----------------------------------------------------------------
--- VISUALS TAB TOGGLES
-----------------------------------------------------------------
 
--- 2D ESP (lazy loads module once)
 Toggles.AddToggleCard(
 	pageVisuals,
 	"vis_esp",
