@@ -33,6 +33,7 @@ local CONFIG = {
 ----------------------------------------------------------------
 local TOGGLES_URL = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/ToggleSwitches.lua"
 local DRAG_URL = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/DragController.lua"
+local ESP_URL = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/ESP.lua"
 
 
 local function loadModule(url: string)
@@ -54,6 +55,7 @@ end
 
 local Toggles = loadModule(TOGGLES_URL)
 local DragController = loadModule(DRAG_URL)
+local ESP = loadModule(ESP_URL)
 
 local G = (typeof(getgenv) == "function") and getgenv() or _G
 G.__HIGGI_TOGGLES_API = Toggles
@@ -319,12 +321,27 @@ local setL, setR = buildToggleLayout(pageSettings)
 ----------------------------------------------------------------
 -- ADD 2 ROWS PER TAB
 ----------------------------------------------------------------
-local function add4(left, right, prefix)
-	Toggles.AddToggleCard(left, prefix.."1", "Toggle A", "Description.", 1, false, ToggleConfig, ToggleServices)
-	Toggles.AddToggleCard(left, prefix.."2", "Toggle B", "Description.", 2, false, ToggleConfig, ToggleServices)
-	Toggles.AddToggleCard(right, prefix.."3", "Toggle C", "Description.", 1, false, ToggleConfig, ToggleServices)
-	Toggles.AddToggleCard(right, prefix.."4", "Toggle D", "Description.", 2, false, ToggleConfig, ToggleServices)
-end
+Toggles.AddToggleCard(
+	visL,
+	"vis_esp",
+	"2D Box ESP",
+	"Draws boxes, health, and names.",
+	1,
+	false,
+	ToggleConfig,
+	ToggleServices
+)
+
+Toggles.AddToggleCard(
+	visL,
+	"vis_snaplines",
+	"Snaplines",
+	"Draws bottom snaplines.",
+	2,
+	false,
+	ToggleConfig,
+	ToggleServices
+)
 
 add4(mainL, mainR, "main_")
 add4(visL, visR, "vis_")
