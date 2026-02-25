@@ -285,6 +285,34 @@ visualsGrid.SortOrder = Enum.SortOrder.LayoutOrder
 visualsGrid.Parent = pageVisuals
 
 ----------------------------------------------------------------
+-- AUTO LOAD ESP WHEN ANY VISUAL TOGGLE ENABLES
+----------------------------------------------------------------
+
+local function ensureESP()
+	ensureFeatureLoaded("vis_esp", ESP_URL)
+end
+
+Toggles.Subscribe("vis_glow", function(state)
+	if state then ensureESP() end
+end)
+
+Toggles.Subscribe("vis_boxes", function(state)
+	if state then ensureESP() end
+end)
+
+Toggles.Subscribe("vis_health", function(state)
+	if state then ensureESP() end
+end)
+
+Toggles.Subscribe("vis_name", function(state)
+	if state then ensureESP() end
+end)
+
+Toggles.Subscribe("vis_snap", function(state)
+	if state then ensureESP() end
+end)
+
+----------------------------------------------------------------
 -- VISUALS TAB
 ----------------------------------------------------------------
 
