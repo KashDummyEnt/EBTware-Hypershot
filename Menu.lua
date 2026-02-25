@@ -315,16 +315,17 @@ Toggles.AddToggleCard(
 )
 
 ----------------------------------------------------------------
--- VISUALS: SUB TOGGLES
+-- VISUALS TAB
 ----------------------------------------------------------------
 
+-- Glow / Highlight
 Toggles.AddToggleCard(
 	pageVisuals,
 	"vis_glow",
 	"Glow / Highlight",
-	"Uses Highlight color for ESP.",
-	2,
-	false,
+	"Forces AlwaysOnTop highlight. Converts green glow to blue.",
+	1,
+	true,
 	{
 		Bg2 = CONFIG.BgCard,
 		Bg3 = CONFIG.BgSidebar,
@@ -339,11 +340,34 @@ Toggles.AddToggleCard(
 	}
 )
 
+-- Boxes
 Toggles.AddToggleCard(
 	pageVisuals,
 	"vis_boxes",
 	"Boxes",
 	"Draws 2D box around players.",
+	2,
+	true,
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Accent = CONFIG.Accent,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	}
+)
+
+-- Health Bar
+Toggles.AddToggleCard(
+	pageVisuals,
+	"vis_health",
+	"Health Bar",
+	"Shows vertical health bar on left side.",
 	3,
 	true,
 	{
@@ -360,11 +384,12 @@ Toggles.AddToggleCard(
 	}
 )
 
+-- Name
 Toggles.AddToggleCard(
 	pageVisuals,
-	"vis_health",
-	"Health Bar",
-	"Shows vertical health bar.",
+	"vis_name",
+	"Name",
+	"Displays player name above box.",
 	4,
 	true,
 	{
@@ -381,33 +406,13 @@ Toggles.AddToggleCard(
 	}
 )
 
-Toggles.AddToggleCard(
-	pageVisuals,
-	"vis_name",
-	"Name",
-	"Displays player name above box.",
-	5,
-	true,
-	{
-		Bg2 = CONFIG.BgCard,
-		Bg3 = CONFIG.BgSidebar,
-		Accent = CONFIG.Accent,
-		Text = CONFIG.Text,
-		SubText = CONFIG.SubText,
-		Stroke = CONFIG.Stroke,
-	},
-	{
-		TweenService = TweenService,
-		UserInputService = UserInputService,
-	}
-)
-
+-- Snapline
 Toggles.AddToggleCard(
 	pageVisuals,
 	"vis_snap",
 	"Snapline",
-	"Draws snapline to player.",
-	6,
+	"Draws 3D snapline from you to player.",
+	5,
 	true,
 	{
 		Bg2 = CONFIG.BgCard,
