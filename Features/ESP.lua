@@ -133,7 +133,7 @@ local function createESP(model: Model): ESPData
 	local box = Instance.new("Frame")
 	box.BackgroundTransparency = 1
 	box.BorderSizePixel = 0
-	box.Visible = false
+	box.Visible = true
 	box.Parent = screenGui
 
 	local stroke = Instance.new("UIStroke")
@@ -282,7 +282,7 @@ local function startESP()
 
 			local esp = getESP(model)
 
-			esp.box.Visible = boxEnabled
+			esp.box.Visible = true
 			esp.box.Size = UDim2.fromOffset(width, height)
 			esp.box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
 
