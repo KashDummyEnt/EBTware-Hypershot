@@ -266,18 +266,28 @@ local pageMisc = createTab("Misc")
 local pageSettings = createTab("Settings")
 
 ----------------------------------------------------------------
--- ADD VISUALS TOGGLES (LAZY ESP LOAD)
+-- VISUALS: 2D BOX ESP (Single Toggle, Lazy Loaded)
 ----------------------------------------------------------------
 
 Toggles.AddToggleCard(
 	pageVisuals,
-	"vis_esp",
+	"vis_esp", -- key (must match ESP.lua)
 	"2D Box ESP",
-	"Draws boxes, health, and names.",
-	1,
-	false,
-	ToggleConfig,
-	ToggleServices,
+	"Draws 2D boxes, names, and health bars.",
+	1, -- layout order
+	false, -- default state
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Accent = CONFIG.Accent,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	},
 	function(state)
 		if state then
 			ensureFeatureLoaded("vis_esp", ESP_URL)
@@ -285,29 +295,6 @@ Toggles.AddToggleCard(
 	end
 )
 
--- Snaplines (handled internally by ESP.lua)
-Toggles.AddToggleCard(
-	pageVisuals,
-	"vis_snaplines",
-	"Snaplines",
-	"Draws bottom snaplines.",
-	2,
-	false,
-	ToggleConfig,
-	ToggleServices
-)
-
--- Future placeholder
-Toggles.AddToggleCard(
-	pageVisuals,
-	"vis_highlight",
-	"Highlight Sync",
-	"Sync highlight color to ESP.",
-	3,
-	false,
-	ToggleConfig,
-	ToggleServices
-)
 switchTab("Main")
 
 DragController.Attach(header, window, UserInputService)
