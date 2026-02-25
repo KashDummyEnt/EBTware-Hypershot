@@ -89,36 +89,23 @@ end
 -- HIGHLIGHT
 ------------------------------------------------------------------
 
-local function isRed(c: Color3): boolean
-	return c.R > 0.6 and c.G < 0.4 and c.B < 0.4
-end
-
 local function isGreen(c: Color3): boolean
 	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
 end
 
-local function isBlue(c: Color3): boolean
-	return c.B > 0.6 and c.R < 0.4 and c.G < 0.4
-end
-
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
-	if not highlight then
-		return BLUE
-	end
-
-	local color = highlight.FillColor
+	if not highlight then return BLUE end
 
 	if glowEnabled then
-		-- Glow enabled = force everything on top
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	else
-		-- Glow disabled = only red loses AlwaysOnTop
-		if isRed(color) then
-			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		elseif isGreen(color) or isBlue(color) then
-			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		end
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	end
+
+	if isGreen(highlight.FillColor) or isGreen(highlight.OutlineColor) then
+		highlight.FillColor = BLUE
+		highlight.OutlineColor = BLUE
 	end
 
 	return highlight.FillColor
@@ -155,7 +142,7 @@ local function createESP(model: Model): ESPData
 	local healthBg = Instance.new("Frame")
 	healthBg.BackgroundColor3 = Color3.fromRGB(35,35,35)
 	healthBg.BorderSizePixel = 0
-	healthBg.Parent = screenGui
+	healthBg.Parent = box
 
 	local healthFill = Instance.new("Frame")
 	healthFill.BorderSizePixel = 0
@@ -330,11 +317,8 @@ local function startESP()
 			esp.healthBg.Visible = healthEnabled
 			esp.healthFill.Visible = healthEnabled
 			esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
-esp.healthBg.Position = UDim2.fromOffset(
-	top2D.X - width/2 - HEALTH_WIDTH - 2,
-	top2D.Y
-)
-esp.healthBg.Size = UDim2.fromOffset(HEALTH_WIDTH, height)
+			esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
+			esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
 			esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
 			esp.healthFill.BackgroundColor3 = HEALTH_GREEN
 
