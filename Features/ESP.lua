@@ -237,16 +237,44 @@ end
 ------------------------------------------------------------------
 
 local function destroyESP(model: Model)
+
 	local esp = espByModel[model]
 	if esp then
-		if esp.box then esp.box:Destroy() end
-		if esp.name then esp.name:Destroy() end
+
+		if esp.box then
+			esp.box:Destroy()
+		end
+
+		if esp.stroke then
+			esp.stroke:Destroy()
+		end
+
+		if esp.healthFill then
+			esp.healthFill:Destroy()
+		end
+
+		if esp.healthBg then
+			esp.healthBg:Destroy()
+		end
+
+		if esp.name then
+			esp.name:Destroy()
+		end
+
 		espByModel[model] = nil
 	end
 
 	local snap = snapByModel[model]
 	if snap then
-		if snap.part then snap.part:Destroy() end
+
+		if snap.ad then
+			snap.ad:Destroy()
+		end
+
+		if snap.part then
+			snap.part:Destroy()
+		end
+
 		snapByModel[model] = nil
 	end
 end
