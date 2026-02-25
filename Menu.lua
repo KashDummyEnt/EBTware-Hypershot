@@ -266,16 +266,35 @@ local pageMisc = createTab("Misc")
 local pageSettings = createTab("Settings")
 
 ----------------------------------------------------------------
--- VISUALS: 2D BOX ESP (Single Toggle, Lazy Loaded)
+-- VISUALS GRID LAYOUT (2 COLUMN)
+----------------------------------------------------------------
+
+local visualsPadding = Instance.new("UIPadding")
+visualsPadding.PaddingTop = UDim.new(0, 6)
+visualsPadding.PaddingLeft = UDim.new(0, 6)
+visualsPadding.PaddingRight = UDim.new(0, 6)
+visualsPadding.PaddingBottom = UDim.new(0, 6)
+visualsPadding.Parent = pageVisuals
+
+local visualsGrid = Instance.new("UIGridLayout")
+visualsGrid.CellSize = UDim2.new(0.5, -8, 0, 70)
+visualsGrid.CellPadding = UDim2.new(0, 8, 0, 8)
+visualsGrid.HorizontalAlignment = Enum.HorizontalAlignment.Left
+visualsGrid.VerticalAlignment = Enum.VerticalAlignment.Top
+visualsGrid.SortOrder = Enum.SortOrder.LayoutOrder
+visualsGrid.Parent = pageVisuals
+
+----------------------------------------------------------------
+-- VISUALS: 2D BOX ESP (MASTER TOGGLE, LAZY LOADED)
 ----------------------------------------------------------------
 
 Toggles.AddToggleCard(
 	pageVisuals,
-	"vis_esp", -- key (must match ESP.lua)
-	"2D Box ESP",
-	"Draws 2D boxes, names, and health bars.",
-	1, -- layout order
-	false, -- default state
+	"vis_esp",
+	"Enable ESP",
+	"Master toggle for all ESP features.",
+	1,
+	false,
 	{
 		Bg2 = CONFIG.BgCard,
 		Bg3 = CONFIG.BgSidebar,
@@ -295,6 +314,118 @@ Toggles.AddToggleCard(
 	end
 )
 
-switchTab("Main")
+----------------------------------------------------------------
+-- VISUALS: SUB TOGGLES
+----------------------------------------------------------------
 
+Toggles.AddToggleCard(
+	pageVisuals,
+	"vis_glow",
+	"Glow / Highlight",
+	"Uses Highlight color for ESP.",
+	2,
+	false,
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Accent = CONFIG.Accent,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	}
+)
+
+Toggles.AddToggleCard(
+	pageVisuals,
+	"vis_boxes",
+	"Boxes",
+	"Draws 2D box around players.",
+	3,
+	true,
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Accent = CONFIG.Accent,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	}
+)
+
+Toggles.AddToggleCard(
+	pageVisuals,
+	"vis_health",
+	"Health Bar",
+	"Shows vertical health bar.",
+	4,
+	true,
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Accent = CONFIG.Accent,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	}
+)
+
+Toggles.AddToggleCard(
+	pageVisuals,
+	"vis_name",
+	"Name",
+	"Displays player name above box.",
+	5,
+	true,
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Accent = CONFIG.Accent,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	}
+)
+
+Toggles.AddToggleCard(
+	pageVisuals,
+	"vis_snap",
+	"Snapline",
+	"Draws snapline to player.",
+	6,
+	true,
+	{
+		Bg2 = CONFIG.BgCard,
+		Bg3 = CONFIG.BgSidebar,
+		Accent = CONFIG.Accent,
+		Text = CONFIG.Text,
+		SubText = CONFIG.SubText,
+		Stroke = CONFIG.Stroke,
+	},
+	{
+		TweenService = TweenService,
+		UserInputService = UserInputService,
+	}
+)
+
+----------------------------------------------------------------
+-- DEFAULT TAB + DRAG
+----------------------------------------------------------------
+
+switchTab("Main")
 DragController.Attach(header, window, UserInputService)
