@@ -35,8 +35,8 @@ function Preview.Init(deps)
 
 	local previewNameLabel = Instance.new("TextLabel")
 	previewNameLabel.Name = "PreviewName"
-	previewNameLabel.Size = UDim2.new(1, -32, 0, 20)
-	previewNameLabel.Position = UDim2.new(0, 16, 0, 8)
+previewNameLabel.Size = UDim2.new(1, -32, 0, 20)
+previewNameLabel.Position = UDim2.fromOffset(16, 0)
 	previewNameLabel.BackgroundTransparency = 1
 	previewNameLabel.Font = Enum.Font.GothamSemibold
 	previewNameLabel.TextScaled = true
@@ -52,8 +52,8 @@ function Preview.Init(deps)
 local HEALTH_WIDTH = 6
 
 local previewHealthContainer = Instance.new("Frame")
-previewHealthContainer.Size = UDim2.new(0, HEALTH_WIDTH, 1, -32)
-previewHealthContainer.Position = UDim2.new(0, 14, 0, 24)
+previewHealthContainer.Size = UDim2.fromOffset(HEALTH_WIDTH, 100)
+previewHealthContainer.Position = UDim2.fromOffset(14, 0)
 previewHealthContainer.BackgroundTransparency = 1
 previewHealthContainer.Visible = false
 previewHealthContainer.Parent = previewPanel
@@ -457,34 +457,49 @@ end
 		-- Update camera FIRST
 		cam.CFrame = CFrame.new(center + Vector3.new(0,0,distance), center)
 
-		-- Then calculate 2D box
-		if preview2DBox then
+local panelSize = previewPanel.AbsoluteSize
+local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
 
-			local panelSize = previewPanel.AbsoluteSize
-			local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
+local projectedHeight =
+	(size.Y / camToModel) *
+	(panelSize.Y / (2 * math.tan(fov / 2)))
 
-			local projectedHeight =
-				(size.Y / camToModel) *
-				(panelSize.Y / (2 * math.tan(fov / 2)))
+local projectedWidth = projectedHeight * (size.X / size.Y)
 
-			local projectedWidth = projectedHeight * (size.X / size.Y)
+projectedHeight *= 1.05
+projectedWidth *= 1.05
 
-			-- Slight visual trim to perfectly match 3D box
-			projectedHeight *= 1.05
-			projectedWidth *= 1.05
+local centerX = panelSize.X / 2
+local centerY = panelSize.Y / 2
 
-			local centerX = panelSize.X / 2
-			local centerY = panelSize.Y / 2
+local topY = centerY - projectedHeight/2
 
-			preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
-			preview2DBox.Position = UDim2.fromOffset(
-				centerX - projectedWidth/2,
-				centerY - projectedHeight/2
-			)
+-- 2D BOX (if enabled)
+if preview2DBox then
+	preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+	preview2DBox.Position = UDim2.fromOffset(
+		centerX - projectedWidth/2,
+		topY
+	)
+	preview2DBox.Visible = true
+end
 
-			preview2DBox.Visible = true
-		end
+-- HEALTH BAR (always based on projection)
+if previewHealthContainer.Visible then
+	previewHealthContainer.Size = UDim2.fromOffset(HEALTH_WIDTH, projectedHeight)
+	previewHealthContainer.Position = UDim2.fromOffset(
+		centerX - projectedWidth/2 - HEALTH_WIDTH - 4,
+		topY
+	)
+end
 
+-- NAME (always based on projection)
+if previewNameLabel.Visible then
+	previewNameLabel.Position = UDim2.fromOffset(
+		centerX - projectedWidth/2,
+		topY - 22
+	)
+end
 		-- 3D Box
 		if previewBox then
 			local paddedSize = Vector3.new(
