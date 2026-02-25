@@ -20,7 +20,7 @@ if not Toggles then
 	return
 end
 
-print("=== 2D BOX ESP LOADED (NO MASTER) ===")
+print("=== 2D BOX ESP LOADED (CLEAN FIX) ===")
 
 ------------------------------------------------------------------
 -- CONFIG
@@ -71,7 +71,7 @@ local snapByModel: {[Model]: SnapData} = {}
 local screenGui: ScreenGui? = nil
 
 ------------------------------------------------------------------
--- UTIL (YOUR ORIGINAL STYLE)
+-- UTIL
 ------------------------------------------------------------------
 
 local function isCharacterModel(model: Instance): boolean
@@ -85,71 +85,18 @@ local function shouldSkip(model: Model, localChar: Model?): boolean
 	return false
 end
 
-local function isGreen(c: Color3): boolean
-	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
-end
-
-local function isBlue(c: Color3): boolean
-	return c.B > 0.6 and c.G < 0.6 and c.R < 0.4
-end
-
-local function isRed(c: Color3): boolean
-	return c.R > 0.6 and c.G < 0.4 and c.B < 0.4
-end
-
 ------------------------------------------------------------------
--- HIGHLIGHT LOGIC (COLOR-BASED, NO STRICT MATCHING)
+-- HIGHLIGHT
 ------------------------------------------------------------------
 
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
 	if not highlight then return BLUE end
 
-	local fill = highlight.FillColor
-	local outline = highlight.OutlineColor
-
-	local green = isGreen(fill) or isGreen(outline)
-	local blue = isBlue(fill) or isBlue(outline)
-	local red = isRed(fill) or isRed(outline)
-
-	------------------------------------------------------------------
-	-- GLOW ENABLED
-	------------------------------------------------------------------
 	if glowEnabled then
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-
-		-- convert green → blue
-		if green then
-			highlight.FillColor = BLUE
-			highlight.OutlineColor = BLUE
-			return BLUE
-		end
-
-		return highlight.FillColor
-	end
-
-	------------------------------------------------------------------
-	-- GLOW DISABLED
-	------------------------------------------------------------------
-
-	-- red becomes occluded
-	if red then
+	else
 		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		return highlight.FillColor
-	end
-
-	-- blue (that used to be green) → revert to green
-	if blue then
-		highlight.FillColor = GREEN
-		highlight.OutlineColor = GREEN
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		return GREEN
-	end
-
-	-- green stays AlwaysOnTop
-	if green then
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		return highlight.FillColor
 	end
 
 	return highlight.FillColor
@@ -177,7 +124,6 @@ local function createESP(model: Model): ESPData
 	local box = Instance.new("Frame")
 	box.BackgroundTransparency = 1
 	box.BorderSizePixel = 0
-	box.Visible = true
 	box.Parent = screenGui
 
 	local stroke = Instance.new("UIStroke")
@@ -194,16 +140,16 @@ local function createESP(model: Model): ESPData
 	healthFill.BackgroundColor3 = HEALTH_GREEN
 	healthFill.Parent = healthBg
 
-local name = Instance.new("TextLabel")
-name.BackgroundTransparency = 1
-name.TextScaled = false
-name.Font = Enum.Font.GothamSemibold
-name.TextStrokeTransparency = 0.5
-name.TextWrapped = false
-name.TextXAlignment = Enum.TextXAlignment.Center
-name.TextYAlignment = Enum.TextYAlignment.Center
-name.ClipsDescendants = true
-name.Parent = screenGui
+	local name = Instance.new("TextLabel")
+	name.BackgroundTransparency = 1
+	name.Font = Enum.Font.GothamSemibold
+	name.TextStrokeTransparency = 0.5
+	name.TextWrapped = false
+	name.TextXAlignment = Enum.TextXAlignment.Center
+	name.TextYAlignment = Enum.TextYAlignment.Center
+	name.AnchorPoint = Vector2.new(0.5,1)
+	name.ClipsDescendants = false
+	name.Parent = screenGui
 
 	local data: ESPData = {
 		box = box,
@@ -263,19 +209,20 @@ end
 local function destroyESP(model: Model)
 	local esp = espByModel[model]
 	if esp then
-		esp.box:Destroy()
+		if esp.box then esp.box:Destroy() end
+		if esp.name then esp.name:Destroy() end
 		espByModel[model] = nil
 	end
 
 	local snap = snapByModel[model]
 	if snap then
-		snap.part:Destroy()
+		if snap.part then snap.part:Destroy() end
 		snapByModel[model] = nil
 	end
 end
 
 ------------------------------------------------------------------
--- RENDER LOOP
+-- RENDER
 ------------------------------------------------------------------
 
 local function startESP()
@@ -293,7 +240,13 @@ local function startESP()
 		local localHum = localChar:FindFirstChildOfClass("Humanoid")
 		if not localRoot or not localHum then return end
 
-		local origin = localRoot.Position - Vector3.new(0, localHum.HipHeight + (localRoot.Size.Y / 2), 0)
+		local origin = localRoot.Position - Vector3.new(0, localHum.HipHeight + (localRoot.Size.Y/2), 0)
+
+		for model, _ in pairs(espByModel) do
+			if not model.Parent then
+				destroyESP(model)
+			end
+		end
 
 		for _, model in ipairs(workspace:GetDescendants()) do
 			if not model:IsA("Model") then continue end
@@ -312,14 +265,18 @@ local function startESP()
 			local color = handleHighlight(model)
 
 			local top3D = head.Position + Vector3.new(0,0.5,0)
-			local bottom3D = root.Position - Vector3.new(0,hum.HipHeight + (root.Size.Y/2),0)
+			local bottom3D = root.Position - Vector3.new(0, hum.HipHeight + (root.Size.Y/2), 0)
 
 			local top2D, topOnScreen = Camera:WorldToViewportPoint(top3D)
 			local bottom2D, bottomOnScreen = Camera:WorldToViewportPoint(bottom3D)
 
 			if not topOnScreen or not bottomOnScreen then
-				if espByModel[model] then
-					espByModel[model].box.Visible = false
+				local esp = espByModel[model]
+				if esp then
+					esp.box.Visible = false
+					esp.name.Visible = false
+					esp.healthBg.Visible = false
+					esp.healthFill.Visible = false
 				end
 				continue
 			end
@@ -330,37 +287,28 @@ local function startESP()
 
 			local esp = getESP(model)
 
-			esp.box.Visible = true
+			esp.box.Visible = boxEnabled
 			esp.box.Size = UDim2.fromOffset(width, height)
 			esp.box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
-
 			esp.stroke.Enabled = boxEnabled
 			esp.stroke.Color = color
 
 			local plr = Players:GetPlayerFromCharacter(model)
 			local displayName = plr and plr.DisplayName or model.Name
 
-esp.name.Visible = nameEnabled
-esp.name.Text = displayName
-esp.name.TextColor3 = color
+			esp.name.Visible = nameEnabled
+			esp.name.Text = displayName
+			esp.name.TextColor3 = color
+			esp.name.TextSize = math.clamp(height * 0.2, 14, 22)
+			esp.name.Size = UDim2.fromOffset(200, esp.name.TextSize + 4)
+			esp.name.Position = UDim2.fromOffset(top2D.X, top2D.Y - 4)
 
--- stable scaling
-local textSize = math.clamp(height * 0.2, 14, 22)
-esp.name.TextSize = textSize
-
--- center anchor so it doesn't drift
-esp.name.AnchorPoint = Vector2.new(0.5, 1)
-esp.name.Size = UDim2.fromOffset(200, textSize + 4)
-esp.name.Position = UDim2.fromOffset(top2D.X, top2D.Y - 4)
-
-			local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
+			local hpPercent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
 
 			esp.healthBg.Visible = healthEnabled
 			esp.healthFill.Visible = healthEnabled
-
 			esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
 			esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
-
 			esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
 			esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
 			esp.healthFill.BackgroundColor3 = HEALTH_GREEN
@@ -411,4 +359,4 @@ end)
 
 startESP()
 
-print("=== 2D BOX ESP READY (Clip Fix Test) ===")
+print("=== 2D BOX ESP READY (CLEANUP FIXED) ===")
