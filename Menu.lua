@@ -38,7 +38,7 @@ local CONFIG = {
 local TOGGLES_URL = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/ToggleSwitches.lua"
 local DRAG_URL    = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/DragController.lua"
 local ESP_URL     = "https://raw.githubusercontent.com/KashDummyEnt/EBTware-Hypershot/refs/heads/main/Features/ESP.lua"
-
+local PREVIEW_URL = "https://raw.githubusercontent.com/KashDummyEnt/higgitron3000/refs/heads/main/Menu/Preview.lua"
 
 ----------------------------------------------------------------
 -- SAFE MODULE LOADER
@@ -55,6 +55,7 @@ end
 
 local Toggles = loadModule(TOGGLES_URL)
 local DragController = loadModule(DRAG_URL)
+local Preview = loadModule(PREVIEW_URL)
 
 local G = (typeof(getgenv) == "function" and getgenv()) or _G
 G.__HIGGI_TOGGLES_API = Toggles
@@ -161,27 +162,90 @@ local inputBlocker = make("TextButton", {
 	Parent = screenGui,
 })
 
-----------------------------------------------------------------
--- MAIN WINDOW
-----------------------------------------------------------------
+------------------------------------------------------------
+-- GROUP CONTAINER (CENTERED)
+------------------------------------------------------------
+
+local PREVIEW_WIDTH = 210
+local PREVIEW_GAP = 16
+local PREVIEW_HEIGHT = CONFIG.Height - 32
+
+local GROUP_WIDTH = CONFIG.Width + PREVIEW_GAP + PREVIEW_WIDTH
+local GROUP_HEIGHT = CONFIG.Height
 
 local popupGroup = make("Frame", {
-	Size = UDim2.fromOffset(CONFIG.Width, CONFIG.Height),
-	Position = UDim2.fromScale(0.5,0.5),
-	AnchorPoint = Vector2.new(0.5,0.5),
+	Size = UDim2.fromOffset(GROUP_WIDTH, GROUP_HEIGHT),
+	Position = UDim2.fromScale(0.5, 0.5),
+	AnchorPoint = Vector2.new(0.5, 0.5),
 	BackgroundTransparency = 1,
 	Visible = false,
 	Parent = screenGui,
 })
-popupGroup.ZIndex = 5
+
+------------------------------------------------------------
+-- MAIN MENU PANEL
+------------------------------------------------------------
 
 local window = make("Frame", {
+	Size = UDim2.fromOffset(CONFIG.Width, CONFIG.Height),
+	Position = UDim2.fromOffset(0, 0),
 	BackgroundColor3 = CONFIG.Bg,
-	Size = UDim2.fromScale(1,1),
 	Parent = popupGroup,
 })
-addCorner(window,16)
+
+addCorner(window, 16)
 addStroke(window)
+
+------------------------------------------------------------
+-- PREVIEW PANEL
+------------------------------------------------------------
+
+local previewPanel = make("Frame", {
+	Size = UDim2.fromOffset(PREVIEW_WIDTH, PREVIEW_HEIGHT),
+	Position = UDim2.fromOffset(
+		CONFIG.Width + PREVIEW_GAP,
+		(GROUP_HEIGHT - PREVIEW_HEIGHT) / 2
+	),
+	BackgroundColor3 = CONFIG.Bg,
+	Parent = popupGroup,
+})
+addCorner(previewPanel, 16)
+addStroke(previewPanel)
+
+
+------------------------------------------------------------
+-- VIEWPORT SETUP
+------------------------------------------------------------
+
+local viewport = make("ViewportFrame", {
+	Size = UDim2.new(1, -12, 1, -12),
+	Position = UDim2.fromOffset(6, 6),
+	BackgroundTransparency = 1,
+	Ambient = Color3.fromRGB(210,210,210),
+	LightColor = Color3.fromRGB(255,255,255),
+	LightDirection = Vector3.new(-1,-1,-0.5),
+	Parent = previewPanel,
+})
+
+local world = Instance.new("WorldModel")
+world.Parent = viewport
+
+local cam = Instance.new("Camera")
+cam.FieldOfView = 30
+cam.Parent = viewport
+viewport.CurrentCamera = cam
+
+
+Preview.Init({
+	Players = Players,
+	RunService = game:GetService("RunService"),
+	UserInputService = UserInputService,
+	Toggles = Toggles,
+	Viewport = viewport,
+	WorldModel = world,
+	Camera = cam,
+	PreviewPanel = previewPanel,
+})
 
 ----------------------------------------------------------------
 -- HEADER
