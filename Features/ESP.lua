@@ -89,6 +89,10 @@ end
 -- HIGHLIGHT
 ------------------------------------------------------------------
 
+local function isGreen(c: Color3): boolean
+	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
+end
+
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
 	if not highlight then return BLUE end
@@ -97,6 +101,11 @@ local function handleHighlight(model: Model): Color3
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	else
 		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+	end
+
+	if isGreen(highlight.FillColor) or isGreen(highlight.OutlineColor) then
+		highlight.FillColor = BLUE
+		highlight.OutlineColor = BLUE
 	end
 
 	return highlight.FillColor
