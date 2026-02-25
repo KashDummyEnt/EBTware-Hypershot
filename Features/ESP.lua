@@ -52,14 +52,6 @@ local healthEnabled = Toggles.GetState("vis_health", true)
 local nameEnabled = Toggles.GetState("vis_name", true)
 local snapEnabled = Toggles.GetState("vis_snap", true)
 
--- Track highlight conversions
-type HighlightState = {
-	originalGreen: Color3?,
-	converted: boolean,
-}
-
-local highlightStates: {[Highlight]: HighlightState} = {}
-
 type ESPData = {
 	box: Frame,
 	stroke: UIStroke,
@@ -79,7 +71,7 @@ local snapByModel: {[Model]: SnapData} = {}
 local screenGui: ScreenGui? = nil
 
 ------------------------------------------------------------------
--- UTIL
+-- UTIL (YOUR ORIGINAL STYLE)
 ------------------------------------------------------------------
 
 local function isCharacterModel(model: Instance): boolean
@@ -93,38 +85,32 @@ local function shouldSkip(model: Model, localChar: Model?): boolean
 	return false
 end
 
-local function isColor(c: Color3, target: Color3): boolean
-	return math.abs(c.R - target.R) < 0.01
-		and math.abs(c.G - target.G) < 0.01
-		and math.abs(c.B - target.B) < 0.01
+local function isGreen(c: Color3): boolean
+	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
+end
+
+local function isBlue(c: Color3): boolean
+	return c.B > 0.6 and c.G < 0.6 and c.R < 0.4
+end
+
+local function isRed(c: Color3): boolean
+	return c.R > 0.6 and c.G < 0.4 and c.B < 0.4
 end
 
 ------------------------------------------------------------------
--- HIGHLIGHT LOGIC (STATEFUL)
+-- HIGHLIGHT LOGIC (COLOR-BASED, NO STRICT MATCHING)
 ------------------------------------------------------------------
 
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
-	if not highlight then
-		return BLUE
-	end
+	if not highlight then return BLUE end
 
 	local fill = highlight.FillColor
 	local outline = highlight.OutlineColor
 
-	local isRed = isColor(fill, RED) or isColor(outline, RED)
-	local isGreen = isColor(fill, GREEN) or isColor(outline, GREEN)
-	local isBlue = isColor(fill, BLUE) or isColor(outline, BLUE)
-
-	-- Ensure state entry
-	if not highlightStates[highlight] then
-		highlightStates[highlight] = {
-			originalGreen = nil,
-			converted = false,
-		}
-	end
-
-	local state = highlightStates[highlight]
+	local green = isGreen(fill) or isGreen(outline)
+	local blue = isBlue(fill) or isBlue(outline)
+	local red = isRed(fill) or isRed(outline)
 
 	------------------------------------------------------------------
 	-- GLOW ENABLED
@@ -132,14 +118,10 @@ local function handleHighlight(model: Model): Color3
 	if glowEnabled then
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 
-		-- Convert original green → blue once
-		if isGreen and not state.converted then
-			state.originalGreen = fill
-			state.converted = true
-
+		-- convert green → blue
+		if green then
 			highlight.FillColor = BLUE
 			highlight.OutlineColor = BLUE
-
 			return BLUE
 		end
 
@@ -150,24 +132,24 @@ local function handleHighlight(model: Model): Color3
 	-- GLOW DISABLED
 	------------------------------------------------------------------
 
-	if isRed then
+	-- red becomes occluded
+	if red then
 		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		return RED
+		return highlight.FillColor
 	end
 
-	-- If this was converted earlier, revert it
-	if state.converted and state.originalGreen then
-		highlight.FillColor = state.originalGreen
-		highlight.OutlineColor = state.originalGreen
-		state.converted = false
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		return state.originalGreen
-	end
-
-	-- Pure green stays AlwaysOnTop
-	if isGreen then
+	-- blue (that used to be green) → revert to green
+	if blue then
+		highlight.FillColor = GREEN
+		highlight.OutlineColor = GREEN
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 		return GREEN
+	end
+
+	-- green stays AlwaysOnTop
+	if green then
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		return highlight.FillColor
 	end
 
 	return highlight.FillColor
@@ -418,4 +400,4 @@ end)
 
 startESP()
 
-print("=== 2D BOX ESP READY (NO MASTER) ===")
+print("=== 2D BOX ESP READY (Higgitron) ===")
