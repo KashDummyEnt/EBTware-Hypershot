@@ -243,11 +243,11 @@ local function stopRender()
 	end
 end
 
-------------------------------------------------------------------
--- SINGLE TOGGLE
-------------------------------------------------------------------
+------------------------------------------------------------
+-- SINGLE TOGGLE (LAZY LOAD SAFE)
+------------------------------------------------------------
 
-Toggles.Subscribe("vis_esp", function(state: boolean)
+local function applyState(state: boolean)
 	ESP_ENABLED = state
 	screenGui.Enabled = state
 
@@ -257,12 +257,14 @@ Toggles.Subscribe("vis_esp", function(state: boolean)
 		stopRender()
 		clearAll()
 	end
-end)
-
-if Toggles.GetState("vis_esp", false) then
-	ESP_ENABLED = true
-	screenGui.Enabled = true
-	startRender()
 end
 
-return {}
+Toggles.Subscribe("vis_esp", applyState)
+
+-- IMPORTANT: defer initial state check
+task.defer(function()
+	local initial = Toggles.GetState("vis_esp", false)
+	if initial then
+		applyState(true)
+	end
+end)
