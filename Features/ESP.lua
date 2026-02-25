@@ -115,35 +115,37 @@ local function handleHighlight(model: Model): Color3
 
 	local currentColor = highlight.FillColor
 
-	-- RED state always occluded
-	if isRed(currentColor) then
-		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		return RED
-	end
-
-	-- GLOW ENABLED → force blue override
+	-- GLOW ENABLED
 	if glowEnabled then
-		highlight.FillColor = BLUE
-		highlight.OutlineColor = BLUE
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		return BLUE
+
+		-- Green becomes blue
+		if isGreen(currentColor) then
+			highlight.FillColor = BLUE
+			highlight.OutlineColor = BLUE
+			return BLUE
+		end
+
+		-- Red stays red but becomes AlwaysOnTop
+		return currentColor
 	end
 
 	-- GLOW DISABLED
-	-- If currently blue, revert to green
+
+	-- Blue reverts to green
 	if isBlue(currentColor) then
 		highlight.FillColor = GREEN
 		highlight.OutlineColor = GREEN
 		currentColor = GREEN
 	end
 
-	-- GREEN should always stay AlwaysOnTop
-	if isGreen(currentColor) then
-		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		return GREEN
+	-- Red becomes occluded again
+	if isRed(currentColor) then
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		return RED
 	end
 
-	-- fallback safety
+	-- Green always stays AlwaysOnTop
 	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 	return currentColor
 end
