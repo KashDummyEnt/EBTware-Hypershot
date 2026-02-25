@@ -203,7 +203,7 @@ name.TextWrapped = false
 name.TextXAlignment = Enum.TextXAlignment.Center
 name.TextYAlignment = Enum.TextYAlignment.Center
 name.ClipsDescendants = true
-name.Parent = box
+name.Parent = screenGui
 
 	local data: ESPData = {
 		box = box,
@@ -350,8 +350,8 @@ esp.name.TextSize = textSize
 
 -- center anchor so it doesn't drift
 esp.name.AnchorPoint = Vector2.new(0.5, 1)
-esp.name.Position = UDim2.new(0.5, 0, 0, -4)
-esp.name.Size = UDim2.new(1, 0, 0, textSize + 4)
+esp.name.Size = UDim2.fromOffset(200, textSize + 4)
+esp.name.Position = UDim2.fromOffset(top2D.X, top2D.Y - 4)
 
 			local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
 
