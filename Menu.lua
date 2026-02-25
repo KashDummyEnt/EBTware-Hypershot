@@ -285,36 +285,6 @@ visualsGrid.SortOrder = Enum.SortOrder.LayoutOrder
 visualsGrid.Parent = pageVisuals
 
 ----------------------------------------------------------------
--- VISUALS: 2D BOX ESP (MASTER TOGGLE, LAZY LOADED)
-----------------------------------------------------------------
-
-Toggles.AddToggleCard(
-	pageVisuals,
-	"vis_esp",
-	"Enable ESP",
-	"Master toggle for all ESP features.",
-	1,
-	false,
-	{
-		Bg2 = CONFIG.BgCard,
-		Bg3 = CONFIG.BgSidebar,
-		Accent = CONFIG.Accent,
-		Text = CONFIG.Text,
-		SubText = CONFIG.SubText,
-		Stroke = CONFIG.Stroke,
-	},
-	{
-		TweenService = TweenService,
-		UserInputService = UserInputService,
-	},
-	function(state)
-		if state then
-			ensureFeatureLoaded("vis_esp", ESP_URL)
-		end
-	end
-)
-
-----------------------------------------------------------------
 -- VISUALS TAB
 ----------------------------------------------------------------
 
