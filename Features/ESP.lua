@@ -97,6 +97,8 @@ end
 -- HIGHLIGHT
 ------------------------------------------------------------------
 
+local forcedBlue: {[Highlight]: boolean} = {}
+
 local function handleHighlight(model: Model): Color3
 	local highlight = model:FindFirstChildOfClass("Highlight")
 	if not highlight then
@@ -106,30 +108,19 @@ local function handleHighlight(model: Model): Color3
 	local fill = highlight.FillColor
 
 	------------------------------------------------------------------
-	-- DEPTH MODE LOGIC (Your Requested Behavior)
+	-- GLOW ENABLED
 	------------------------------------------------------------------
 
 	if glowEnabled then
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-	else
-		if isColorClose(fill, BLUE, 0.05) then
-			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-		else
-			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		end
-	end
 
-	------------------------------------------------------------------
-	-- COLOR LOGIC
-	------------------------------------------------------------------
-
-	-- GLOW ENABLED
-	if glowEnabled then
-
-		-- If roughly green, force to blue
-		if isColorClose(fill, GREEN, 0.05) then
-			highlight.FillColor = BLUE
-			highlight.OutlineColor = BLUE
+		-- If not red, force to blue
+		if not isColorClose(fill, RED, 0.05) then
+			if not forcedBlue[highlight] then
+				highlight.FillColor = BLUE
+				highlight.OutlineColor = BLUE
+				forcedBlue[highlight] = true
+			end
 			return BLUE
 		end
 
@@ -137,15 +128,21 @@ local function handleHighlight(model: Model): Color3
 		return fill
 	end
 
+	------------------------------------------------------------------
 	-- GLOW DISABLED
+	------------------------------------------------------------------
 
-	-- If roughly blue (forced), revert to green
-	if isColorClose(fill, BLUE, 0.05) then
+	-- If we forced this one blue earlier, revert it
+	if forcedBlue[highlight] then
 		highlight.FillColor = GREEN
 		highlight.OutlineColor = GREEN
+		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		forcedBlue[highlight] = nil
 		return GREEN
 	end
 
+	-- Red glows lose AlwaysOnTop
+	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 	return fill
 end
 ------------------------------------------------------------------
