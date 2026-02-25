@@ -1,9 +1,12 @@
 --!strict
--- ESP.lua (Fully Toggle-Wired)
--- 2D Box ESP + Green Health (Left) + Name + Snapline
--- Skips LocalPlayer + Skips "BotRig"
--- Clean snap destruction
--- Controlled by ToggleSwitches key: "vis_esp"
+-- ESP.lua (Fully Modular Toggle-Wired)
+-- Master Toggle: vis_esp
+-- Sub Toggles:
+-- vis_glow
+-- vis_boxes
+-- vis_health
+-- vis_name
+-- vis_snap
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -19,7 +22,7 @@ if not Toggles then
 	return
 end
 
-print("=== 2D BOX ESP LOADED (TOGGLE CONTROLLED) ===")
+print("=== 2D BOX ESP LOADED (MODULAR) ===")
 
 ------------------------------------------------------------------
 -- CONFIG
@@ -43,6 +46,12 @@ local MIN_BOX_WIDTH = 3
 
 local enabled = false
 local renderConnection: RBXScriptConnection? = nil
+
+local glowEnabled = true
+local boxEnabled = true
+local healthEnabled = true
+local nameEnabled = true
+local snapEnabled = true
 
 type ESPData = {
 	box: Frame,
@@ -265,7 +274,11 @@ local function startESP()
 				continue
 			end
 
-			local color = getHighlightColor(model)
+			local color = BLUE
+
+			if glowEnabled then
+				color = getHighlightColor(model)
+			end
 
 			local top3D = head.Position + Vector3.new(0,0.5,0)
 			local bottom3D = root.Position - Vector3.new(0,hum.HipHeight + (root.Size.Y/2),0)
@@ -282,28 +295,32 @@ local function startESP()
 
 			local rawHeight = math.abs(bottom2D.Y - top2D.Y)
 			local height = math.max(rawHeight, MIN_BOX_HEIGHT)
-
 			local rawWidth = rawHeight * 0.5
 			local width = math.max(rawWidth, MIN_BOX_WIDTH)
 
 			local esp = getESP(model)
 			local box = esp.box
 
-			box.Visible = true
+			box.Visible = boxEnabled
 			box.Size = UDim2.fromOffset(width, height)
 			box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
 
+			esp.stroke.Enabled = boxEnabled
 			esp.stroke.Color = color
 
 			local plr = Players:GetPlayerFromCharacter(model)
 			local displayName = plr and plr.DisplayName or model.Name
 
+			esp.name.Visible = nameEnabled
 			esp.name.Text = displayName
 			esp.name.TextColor3 = color
 			esp.name.Size = UDim2.new(1,0,0,14)
 			esp.name.Position = UDim2.new(0,0,0,-16)
 
 			local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
+
+			esp.healthBg.Visible = healthEnabled
+			esp.healthFill.Visible = healthEnabled
 
 			esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
 			esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
@@ -312,16 +329,23 @@ local function startESP()
 			esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
 			esp.healthFill.BackgroundColor3 = HEALTH_GREEN
 
-			local dir = bottom3D - origin
-			local len = dir.Magnitude
+			if snapEnabled then
+				local dir = bottom3D - origin
+				local len = dir.Magnitude
 
-			if len > 0.1 then
-				local mid = origin + dir*0.5
-				local snap = getSnap(model)
+				if len > 0.1 then
+					local mid = origin + dir*0.5
+					local snap = getSnap(model)
 
-				snap.part.CFrame = CFrame.lookAt(mid, bottom3D)
-				snap.ad.Size = Vector3.new(SNAP_THICKNESS,SNAP_THICKNESS,len)
-				snap.ad.Color3 = color
+					snap.part.CFrame = CFrame.lookAt(mid, bottom3D)
+					snap.ad.Size = Vector3.new(SNAP_THICKNESS,SNAP_THICKNESS,len)
+					snap.ad.Color3 = color
+				end
+			else
+				if snapByModel[model] then
+					snapByModel[model].part:Destroy()
+					snapByModel[model] = nil
+				end
 			end
 		end
 	end)
@@ -340,19 +364,35 @@ local function stopESP()
 end
 
 ------------------------------------------------------------------
--- TOGGLE BIND
+-- TOGGLE BINDINGS
 ------------------------------------------------------------------
 
 Toggles.Subscribe("vis_esp", function(state)
-	if state then
-		startESP()
-	else
-		stopESP()
-	end
+	if state then startESP() else stopESP() end
+end)
+
+Toggles.Subscribe("vis_glow", function(state)
+	glowEnabled = state
+end)
+
+Toggles.Subscribe("vis_boxes", function(state)
+	boxEnabled = state
+end)
+
+Toggles.Subscribe("vis_health", function(state)
+	healthEnabled = state
+end)
+
+Toggles.Subscribe("vis_name", function(state)
+	nameEnabled = state
+end)
+
+Toggles.Subscribe("vis_snap", function(state)
+	snapEnabled = state
 end)
 
 if Toggles.GetState("vis_esp", false) then
 	startESP()
 end
 
-print("=== 2D BOX ESP READY MAYBE ===")
+print("=== 2D BOX ESP READY MAYBE TEST (MODULAR) ===")
