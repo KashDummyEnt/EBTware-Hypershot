@@ -50,7 +50,7 @@ local HEALTH_WIDTH = 6
 
 local previewHealthContainer = Instance.new("Frame")
 previewHealthContainer.Size = UDim2.new(0, HEALTH_WIDTH, 1, -32)
-previewHealthContainer.Position = UDim2.new(0, 8, 0, 24)
+previewHealthContainer.Position = UDim2.new(0, 14, 0, 24)
 previewHealthContainer.BackgroundTransparency = 1
 previewHealthContainer.Visible = false
 previewHealthContainer.Parent = previewPanel
