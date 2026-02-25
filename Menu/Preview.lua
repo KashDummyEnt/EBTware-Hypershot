@@ -470,17 +470,19 @@ end
 			local projectedWidth = projectedHeight * (size.X / size.Y)
 
 			-- Slight visual trim to perfectly match 3D box
-			projectedHeight *= 0.98
-			projectedWidth *= 0.98
+			projectedHeight *= 1.04
+			projectedWidth *= 1.04
 
-			local centerX = viewportSize.X / 2
-			local centerY = viewportSize.Y / 2
+local panelSize = previewPanel.AbsoluteSize
 
-			preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
-			preview2DBox.Position = UDim2.fromOffset(
-				centerX - projectedWidth/2,
-				centerY - projectedHeight/2
-			)
+local centerX = panelSize.X / 2
+local centerY = panelSize.Y / 2
+
+preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+preview2DBox.Position = UDim2.fromOffset(
+	centerX - projectedWidth/2,
+	centerY - projectedHeight/2
+)
 
 			preview2DBox.Visible = true
 		end
