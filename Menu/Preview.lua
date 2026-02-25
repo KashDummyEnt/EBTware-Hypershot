@@ -255,15 +255,14 @@ function Preview.Init(deps)
 		clearPreviewESP()
 		removePreviewChams()
 
-		if Toggles.GetState("visuals_box3d") then
-			addPreviewBox()
-		end
+if Toggles.GetState("vis_boxes") then
+    addPreviewBox()
+end
+if Toggles.GetState("vis_glow") then
+    applyPreviewChams()
+end
 
-		if Toggles.GetState("visuals_player") then
-			applyPreviewChams()
-		end
-
-		local healthEnabled = Toggles.GetState("visuals_health") == true
+		local healthEnabled = Toggles.GetState("vis_health") == true
 		previewHealthContainer.Visible = healthEnabled
 
 		if healthEnabled then
@@ -274,7 +273,7 @@ function Preview.Init(deps)
 			fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 		end
 
-		local nameEnabled = Toggles.GetState("visuals_name") == true
+		local nameEnabled = Toggles.GetState("vis_name") == true
 		previewNameLabel.Visible = nameEnabled
 	end
 
@@ -315,10 +314,10 @@ function Preview.Init(deps)
 	-- TOGGLES
 	------------------------------------------------------------
 
-	Toggles.Subscribe("visuals_box3d", refreshPreviewESP)
-	Toggles.Subscribe("visuals_health", refreshPreviewESP)
-	Toggles.Subscribe("visuals_name", refreshPreviewESP)
-	Toggles.Subscribe("visuals_player", refreshPreviewESP)
+	Toggles.Subscribe("vis_boxes", refreshPreviewESP)
+	Toggles.Subscribe("vis_health", refreshPreviewESP)
+	Toggles.Subscribe("vis_name", refreshPreviewESP)
+	Toggles.Subscribe("vis_glow", refreshPreviewESP)
 
 	buildAvatar()
 
