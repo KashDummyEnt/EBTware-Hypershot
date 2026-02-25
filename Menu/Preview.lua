@@ -470,8 +470,8 @@ end
 			local projectedWidth = projectedHeight * (size.X / size.Y)
 
 			-- Slight visual trim to perfectly match 3D box
-			projectedHeight *= 1.1
-			projectedWidth *= 1.1
+			projectedHeight *= 1.05
+			projectedWidth *= 1.05
 
 			local centerX = panelSize.X / 2
 			local centerY = panelSize.Y / 2
