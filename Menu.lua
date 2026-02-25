@@ -145,7 +145,7 @@ local header = make("Frame", {
 
 make("TextLabel", {
 	BackgroundTransparency = 1,
-	Text = "HyperShot",
+	Text = "EBTware - HyperShot",
 	TextColor3 = CONFIG.Accent,
 	TextSize = 22,
 	Font = Enum.Font.GothamBold,
