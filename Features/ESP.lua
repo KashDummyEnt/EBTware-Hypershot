@@ -1,6 +1,6 @@
 --!strict
 -- ESP.lua
--- Clean standalone-style 2D Box ESP (Single Toggle, Player-Tracked)
+-- Standalone-style 2D Box ESP (Deterministic Toggle Control)
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -9,7 +9,7 @@ local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
 ------------------------------------------------------------------
--- WAIT FOR TOGGLE API (AdminESP-style safe wait, no logic copied)
+-- WAIT FOR TOGGLE API (deterministic)
 ------------------------------------------------------------------
 
 local function getGlobal(): any
@@ -169,71 +169,70 @@ local function clearAll()
 end
 
 ------------------------------------------------------------------
--- RENDER LOOP (PLAYER TRACKED ONLY)
+-- RENDER LOOP (Standalone Behavior)
 ------------------------------------------------------------------
+
+local function renderStep()
+	if not ESP_ENABLED then
+		return
+	end
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr == LocalPlayer then
+			continue
+		end
+
+		if not isValidCharacter(plr) then
+			destroyESP(plr)
+			continue
+		end
+
+		local char = plr.Character :: Model
+		local hum = char:FindFirstChildOfClass("Humanoid") :: Humanoid
+		local root = char:FindFirstChild("HumanoidRootPart") :: BasePart
+		local head = char:FindFirstChild("Head") :: BasePart
+
+		local top3D = head.Position + Vector3.new(0,0.5,0)
+		local bottom3D = root.Position - Vector3.new(0,hum.HipHeight + (root.Size.Y/2),0)
+
+		local top2D, topOnScreen = Camera:WorldToViewportPoint(top3D)
+		local bottom2D, bottomOnScreen = Camera:WorldToViewportPoint(bottom3D)
+
+		if not topOnScreen or not bottomOnScreen then
+			if espByPlayer[plr] then
+				espByPlayer[plr].box.Visible = false
+			end
+			continue
+		end
+
+		local rawHeight = math.abs(bottom2D.Y - top2D.Y)
+		local height = math.max(rawHeight, MIN_BOX_HEIGHT)
+		local width = math.max(rawHeight * 0.5, MIN_BOX_WIDTH)
+
+		local esp = espByPlayer[plr] or createESP(plr)
+		local box = esp.box
+
+		box.Visible = true
+		box.Size = UDim2.fromOffset(width, height)
+		box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
+
+		esp.name.Text = plr.DisplayName
+		esp.name.Size = UDim2.new(1,0,0,14)
+		esp.name.Position = UDim2.new(0,0,0,-16)
+
+		local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
+
+		esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
+		esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
+
+		esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
+		esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
+	end
+end
 
 local function startRender()
 	if renderConn then return end
-
-	renderConn = RunService.RenderStepped:Connect(function()
-
-		if not ESP_ENABLED then
-			return
-		end
-
-		for _, plr in ipairs(Players:GetPlayers()) do
-			if plr == LocalPlayer then
-				continue
-			end
-
-			if not isValidCharacter(plr) then
-				destroyESP(plr)
-				continue
-			end
-
-			local char = plr.Character :: Model
-			local hum = char:FindFirstChildOfClass("Humanoid") :: Humanoid
-			local root = char:FindFirstChild("HumanoidRootPart") :: BasePart
-			local head = char:FindFirstChild("Head") :: BasePart
-
-			local top3D = head.Position + Vector3.new(0,0.5,0)
-			local bottom3D = root.Position - Vector3.new(0,hum.HipHeight + (root.Size.Y/2),0)
-
-			local top2D, topOnScreen = Camera:WorldToViewportPoint(top3D)
-			local bottom2D, bottomOnScreen = Camera:WorldToViewportPoint(bottom3D)
-
-			if not topOnScreen or not bottomOnScreen then
-				if espByPlayer[plr] then
-					espByPlayer[plr].box.Visible = false
-				end
-				continue
-			end
-
-			local rawHeight = math.abs(bottom2D.Y - top2D.Y)
-			local height = math.max(rawHeight, MIN_BOX_HEIGHT)
-			local width = math.max(rawHeight * 0.5, MIN_BOX_WIDTH)
-
-			local esp = espByPlayer[plr] or createESP(plr)
-			local box = esp.box
-
-			box.Visible = true
-			box.Size = UDim2.fromOffset(width, height)
-			box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
-
-			local displayName = plr.DisplayName
-			esp.name.Text = displayName
-			esp.name.Size = UDim2.new(1,0,0,14)
-			esp.name.Position = UDim2.new(0,0,0,-16)
-
-			local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
-
-			esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
-			esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
-
-			esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
-			esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
-		end
-	end)
+	renderConn = RunService.RenderStepped:Connect(renderStep)
 end
 
 local function stopRender()
@@ -243,11 +242,11 @@ local function stopRender()
 	end
 end
 
-------------------------------------------------------------
--- SINGLE TOGGLE (LAZY LOAD SAFE)
-------------------------------------------------------------
+------------------------------------------------------------------
+-- CLEAN TOGGLE (NO DEFER, NO RACE)
+------------------------------------------------------------------
 
-local function applyState(state: boolean)
+local function onToggleChanged(state: boolean)
 	ESP_ENABLED = state
 	screenGui.Enabled = state
 
@@ -259,12 +258,9 @@ local function applyState(state: boolean)
 	end
 end
 
-Toggles.Subscribe("vis_esp", applyState)
+Toggles.Subscribe("vis_esp", onToggleChanged)
 
--- IMPORTANT: defer initial state check
-task.defer(function()
-	local initial = Toggles.GetState("vis_esp", false)
-	if initial then
-		applyState(true)
-	end
-end)
+-- Apply current state immediately (deterministic)
+onToggleChanged(Toggles.GetState("vis_esp", false))
+
+return {}
