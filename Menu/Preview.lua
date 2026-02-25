@@ -21,7 +21,7 @@ function Preview.Init(deps)
 	-- BUILD AVATAR + PREVIEW ESP
 	------------------------------------------------------------
 
-	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 255)
+	local PREVIEW_CHAMS_COLOR = Color3.fromRGB(255, 0, 0)
 
 	local preview: Model? = nil
 	local previewBox: Part? = nil
@@ -444,7 +444,7 @@ end
 		)
 
 		--------------------------------------------------------
-		-- CAMERA UPDATE
+		-- CAMERA + 2D BOX PROJECTION (CORRECT ORDER)
 		--------------------------------------------------------
 
 		local cf, size = preview:GetBoundingBox()
@@ -454,57 +454,38 @@ end
 		local fov = math.rad(cam.FieldOfView)
 		local distance = (maxDim / (2 * math.tan(fov / 2))) * 1.25
 
+		-- Update camera FIRST
 		cam.CFrame = CFrame.new(center + Vector3.new(0,0,distance), center)
 
-		--------------------------------------------------------
-		-- 8 CORNER 2D PROJECTION (PIXEL PERFECT)
-		--------------------------------------------------------
+		-- Then calculate 2D box
+		if preview2DBox then
 
-if preview2DBox then
+			local viewportSize = viewport.AbsoluteSize
+			local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
 
-	local corners = {
-		cf * CFrame.new( size.X/2,  size.Y/2,  size.Z/2),
-		cf * CFrame.new(-size.X/2,  size.Y/2,  size.Z/2),
-		cf * CFrame.new( size.X/2, -size.Y/2,  size.Z/2),
-		cf * CFrame.new(-size.X/2, -size.Y/2,  size.Z/2),
-		cf * CFrame.new( size.X/2,  size.Y/2, -size.Z/2),
-		cf * CFrame.new(-size.X/2,  size.Y/2, -size.Z/2),
-		cf * CFrame.new( size.X/2, -size.Y/2, -size.Z/2),
-		cf * CFrame.new(-size.X/2, -size.Y/2, -size.Z/2),
-	}
+			local projectedHeight =
+				(size.Y / camToModel) *
+				(viewportSize.Y / (2 * math.tan(fov / 2)))
 
-	local minX, minY = math.huge, math.huge
-	local maxX, maxY = -math.huge, -math.huge
+			local projectedWidth = projectedHeight * (size.X / size.Y)
 
-	for _, cornerCF in ipairs(corners) do
-		local screenPos = cam:WorldToViewportPoint(cornerCF.Position)
+			-- Slight visual trim to perfectly match 3D box
+			projectedHeight *= 0.98
+			projectedWidth *= 0.98
 
-		minX = math.min(minX, screenPos.X)
-		minY = math.min(minY, screenPos.Y)
-		maxX = math.max(maxX, screenPos.X)
-		maxY = math.max(maxY, screenPos.Y)
-	end
+			local centerX = viewportSize.X / 2
+			local centerY = viewportSize.Y / 2
 
-	if maxX > minX and maxY > minY then
+			preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+			preview2DBox.Position = UDim2.fromOffset(
+				centerX - projectedWidth/2,
+				centerY - projectedHeight/2
+			)
 
-		local offsetX = minX - viewport.AbsolutePosition.X
-		local offsetY = minY - viewport.AbsolutePosition.Y
+			preview2DBox.Visible = true
+		end
 
-		local width = maxX - minX
-		local height = maxY - minY
-
-		preview2DBox.Size = UDim2.fromOffset(width, height)
-		preview2DBox.Position = UDim2.fromOffset(offsetX, offsetY)
-		preview2DBox.Visible = true
-	else
-		preview2DBox.Visible = false
-	end
-end
-
-		--------------------------------------------------------
-		-- 3D BOX
-		--------------------------------------------------------
-
+		-- 3D Box
 		if previewBox then
 			local paddedSize = Vector3.new(
 				size.X + 0.05,
