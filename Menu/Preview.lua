@@ -471,34 +471,40 @@ end
 		-- 2D BOX (PROPER CENTER PROJECTION)
 		--------------------------------------------------------
 
-		if preview2DBox then
+if preview2DBox then
 
-			local viewportSize = viewport.AbsoluteSize
-			local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
+	local viewportSize = viewport.AbsoluteSize
+	local camToModel = (cam.CFrame.Position - cf.Position).Magnitude
 
-			local projectedHeight =
-				(size.Y / camToModel) *
-				(viewportSize.Y / (2 * math.tan(fov / 2)))
+	local projectedHeight =
+		(size.Y / camToModel) *
+		(viewportSize.Y / (2 * math.tan(fov / 2)))
 
-			local projectedWidth = projectedHeight * (size.X / size.Y)
+	local projectedWidth = projectedHeight * (size.X / size.Y)
 
-			-- Slight outward padding (your chosen 1.2 scale)
-			projectedHeight *= 1.2
-			projectedWidth *= 1.2
+	projectedHeight *= 1.2
+	projectedWidth *= 1.2
 
-			local screenPos, onScreen = cam:WorldToViewportPoint(cf.Position)
+	local screenPos, onScreen = cam:WorldToViewportPoint(cf.Position)
 
-			if onScreen then
-				preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
-				preview2DBox.Position = UDim2.fromOffset(
-					screenPos.X - projectedWidth / 2,
-					screenPos.Y - projectedHeight / 2
-				)
-				preview2DBox.Visible = true
-			else
-				preview2DBox.Visible = false
-			end
-		end
+	if onScreen then
+
+		-- Convert screen → panel space
+		local panelAbsPos = previewPanel.AbsolutePosition
+		local localX = screenPos.X - panelAbsPos.X
+		local localY = screenPos.Y - panelAbsPos.Y
+
+		preview2DBox.Size = UDim2.fromOffset(projectedWidth, projectedHeight)
+		preview2DBox.Position = UDim2.fromOffset(
+			localX - projectedWidth / 2,
+			localY - projectedHeight / 2
+		)
+
+		preview2DBox.Visible = true
+	else
+		preview2DBox.Visible = false
+	end
+end
 
 		--------------------------------------------------------
 		-- 3D BOX
