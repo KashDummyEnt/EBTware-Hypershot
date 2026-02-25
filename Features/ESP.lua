@@ -1,7 +1,6 @@
 --!strict
 -- ESP.lua
--- Toggle-driven 2D Box ESP wired to ToggleSwitches
--- Requires: getgenv().__HIGGI_TOGGLES_API
+-- Highlight Synced 2D Box ESP (Menu Wired, Stable)
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -14,9 +13,11 @@ if not Toggles then
 	error("Toggle API not found.")
 end
 
-----------------------------------------------------------------
+print("=== 2D BOX ESP MODULE LOADED ===")
+
+------------------------------------------------------------------
 -- CONFIG
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 local BLUE = Color3.fromRGB(0,120,255)
 local HEALTH_GREEN = Color3.fromRGB(0,255,0)
@@ -30,16 +31,49 @@ local HEALTH_WIDTH = 2
 local MIN_BOX_HEIGHT = 6
 local MIN_BOX_WIDTH = 3
 
-----------------------------------------------------------------
+------------------------------------------------------------------
 -- STATE
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 local ESP_ENABLED = false
 local SNAP_ENABLED = false
 
-----------------------------------------------------------------
+------------------------------------------------------------------
+-- UTIL
+------------------------------------------------------------------
+
+local function isCharacterModel(model: Instance): boolean
+	if not model:IsA("Model") then return false end
+	return model:FindFirstChildOfClass("Humanoid") ~= nil
+end
+
+local function shouldSkip(model: Model, localChar: Model?): boolean
+	if model == localChar then return true end
+	if model.Name == "BotRig" then return true end
+	return false
+end
+
+local function isGreen(c: Color3): boolean
+	return c.G > 0.6 and c.R < 0.4 and c.B < 0.4
+end
+
+local function getHighlightColor(model: Model): Color3
+	local highlight = model:FindFirstChildOfClass("Highlight")
+	if not highlight then return BLUE end
+
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+
+	if isGreen(highlight.FillColor) or isGreen(highlight.OutlineColor) then
+		highlight.FillColor = BLUE
+		highlight.OutlineColor = BLUE
+	end
+
+	return highlight.FillColor
+end
+
+------------------------------------------------------------------
 -- STORAGE
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 type ESPData = {
 	box: Frame,
@@ -57,9 +91,9 @@ type SnapData = {
 local espByModel: {[Model]: ESPData} = {}
 local snapByModel: {[Model]: SnapData} = {}
 
-----------------------------------------------------------------
+------------------------------------------------------------------
 -- GUI ROOT
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "Higgi2DESP"
@@ -68,48 +102,9 @@ screenGui.ResetOnSpawn = false
 screenGui.Enabled = false
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-----------------------------------------------------------------
--- UTIL
-----------------------------------------------------------------
-
-local function isCharacterModel(model: Instance): boolean
-	if not model:IsA("Model") then return false end
-	return model:FindFirstChildOfClass("Humanoid") ~= nil
-end
-
-local function shouldSkip(model: Model, localChar: Model?): boolean
-	if model == localChar then return true end
-	if model.Name == "BotRig" then return true end
-	return false
-end
-
-----------------------------------------------------------------
--- CLEANUP
-----------------------------------------------------------------
-
-local function destroyESP(model: Model)
-	local esp = espByModel[model]
-	if esp then
-		esp.box:Destroy()
-		espByModel[model] = nil
-	end
-
-	local snap = snapByModel[model]
-	if snap then
-		snap.part:Destroy()
-		snapByModel[model] = nil
-	end
-end
-
-local function clearAll()
-	for model, _ in pairs(espByModel) do
-		destroyESP(model)
-	end
-end
-
-----------------------------------------------------------------
+------------------------------------------------------------------
 -- CREATE ESP
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 local function createESP(model: Model): ESPData
 	local box = Instance.new("Frame")
@@ -155,9 +150,9 @@ local function getESP(model: Model): ESPData
 	return espByModel[model] or createESP(model)
 end
 
-----------------------------------------------------------------
+------------------------------------------------------------------
 -- SNAP
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 local function createSnap(model: Model): SnapData
 	local p = Instance.new("Part")
@@ -190,9 +185,33 @@ local function getSnap(model: Model): SnapData
 	return snapByModel[model] or createSnap(model)
 end
 
-----------------------------------------------------------------
+------------------------------------------------------------------
+-- CLEANUP
+------------------------------------------------------------------
+
+local function destroyESP(model: Model)
+	local esp = espByModel[model]
+	if esp then
+		esp.box:Destroy()
+		espByModel[model] = nil
+	end
+
+	local snap = snapByModel[model]
+	if snap then
+		snap.part:Destroy()
+		snapByModel[model] = nil
+	end
+end
+
+local function clearAll()
+	for model, _ in pairs(espByModel) do
+		destroyESP(model)
+	end
+end
+
+------------------------------------------------------------------
 -- RENDER LOOP
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 RunService.RenderStepped:Connect(function()
 
@@ -229,6 +248,8 @@ RunService.RenderStepped:Connect(function()
 			continue
 		end
 
+		local color = getHighlightColor(model)
+
 		local top3D = head.Position + Vector3.new(0,0.5,0)
 		local bottom3D = root.Position - Vector3.new(0,hum.HipHeight + (root.Size.Y/2),0)
 
@@ -255,13 +276,13 @@ RunService.RenderStepped:Connect(function()
 		box.Size = UDim2.fromOffset(width, height)
 		box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
 
-		esp.stroke.Color = BLUE
+		esp.stroke.Color = color
 
 		local plr = Players:GetPlayerFromCharacter(model)
 		local displayName = plr and plr.DisplayName or model.Name
 
 		esp.name.Text = displayName
-		esp.name.TextColor3 = BLUE
+		esp.name.TextColor3 = color
 		esp.name.Size = UDim2.new(1,0,0,14)
 		esp.name.Position = UDim2.new(0,0,0,-16)
 
@@ -272,25 +293,27 @@ RunService.RenderStepped:Connect(function()
 
 		esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
 		esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
+		esp.healthFill.BackgroundColor3 = HEALTH_GREEN
 
 		if SNAP_ENABLED then
 			local dir = bottom3D - origin
 			local len = dir.Magnitude
+
 			if len > 0.1 then
 				local mid = origin + dir*0.5
 				local snap = getSnap(model)
 
 				snap.part.CFrame = CFrame.lookAt(mid, bottom3D)
 				snap.ad.Size = Vector3.new(SNAP_THICKNESS,SNAP_THICKNESS,len)
-				snap.ad.Color3 = BLUE
+				snap.ad.Color3 = color
 			end
 		end
 	end
 end)
 
-----------------------------------------------------------------
+------------------------------------------------------------------
 -- TOGGLE SUBSCRIPTIONS
-----------------------------------------------------------------
+------------------------------------------------------------------
 
 Toggles.Subscribe("vis_esp", function(state)
 	ESP_ENABLED = state
