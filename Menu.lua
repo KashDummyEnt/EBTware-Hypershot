@@ -19,7 +19,7 @@ local CONFIG = {
 	Width = 560,
 	Height = 380,
 
-	Accent = Color3.fromRGB(170, 0, 255),
+	Accent = Color3.fromRGB(255, 0, 0),
 
 	-- REQUIRED NAMES FOR TOGGLE MODULE
 	Bg  = Color3.fromRGB(18,18,22),   -- main window
