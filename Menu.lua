@@ -55,10 +55,11 @@ end
 
 local Toggles = loadModule(TOGGLES_URL)
 local DragController = loadModule(DRAG_URL)
-local ESP = loadModule(ESP_URL)
 
 local G = (typeof(getgenv) == "function") and getgenv() or _G
 G.__HIGGI_TOGGLES_API = Toggles
+
+local ESP = loadModule(ESP_URL)
 
 ----------------------------------------------------------------
 -- ADAPTER FOR TOGGLE CONFIG
