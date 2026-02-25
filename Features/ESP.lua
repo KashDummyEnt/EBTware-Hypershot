@@ -142,7 +142,7 @@ local function createESP(model: Model): ESPData
 	local healthBg = Instance.new("Frame")
 	healthBg.BackgroundColor3 = Color3.fromRGB(35,35,35)
 	healthBg.BorderSizePixel = 0
-	healthBg.Parent = box
+	healthBg.Parent = screenGui
 
 	local healthFill = Instance.new("Frame")
 	healthFill.BorderSizePixel = 0
@@ -316,8 +316,11 @@ local function startESP()
 
 			esp.healthBg.Visible = healthEnabled
 			esp.healthFill.Visible = healthEnabled
-			esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
-			esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
+esp.healthBg.Size = UDim2.fromOffset(HEALTH_WIDTH, height)
+esp.healthBg.Position = UDim2.fromOffset(
+	top2D.X - width/2 - HEALTH_WIDTH - 2,
+	top2D.Y
+)
 			esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
 			esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
 			esp.healthFill.BackgroundColor3 = HEALTH_GREEN
