@@ -281,33 +281,42 @@ end
 	-- REFRESH PREVIEW ESP
 	------------------------------------------------------------
 
-	local function refreshPreviewESP()
+local function refreshPreviewESP()
 
-		clearPreviewESP()
-		removePreviewChams()
+	clearPreviewESP()
+	removePreviewChams()
 
-if Toggles.GetState("vis_boxes") then
-	addPreviewBox()
-	addPreview2DBox()
-end
-if Toggles.GetState("vis_glow") then
-    applyPreviewChams()
-end
-
-		local healthEnabled = Toggles.GetState("vis_health") == true
-		previewHealthContainer.Visible = healthEnabled
-
-		if healthEnabled then
-			startPreviewHealthAnimation()
-		else
-			stopPreviewHealthAnimation()
-			fill.Size = UDim2.new(1, 0, 1, 0)
-			fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-		end
-
-		local nameEnabled = Toggles.GetState("vis_name") == true
-		previewNameLabel.Visible = nameEnabled
+	-- 2D BOX (uses vis_boxes from CleanMenu)
+	if Toggles.GetState("vis_boxes") then
+		addPreview2DBox()
 	end
+
+	-- 3D BOX (new toggle)
+	if Toggles.GetState("vis_boxes_3d") then
+		addPreviewBox()
+	end
+
+	-- GLOW
+	if Toggles.GetState("vis_glow") then
+		applyPreviewChams()
+	end
+
+	-- HEALTH
+	local healthEnabled = Toggles.GetState("vis_health") == true
+	previewHealthContainer.Visible = healthEnabled
+
+	if healthEnabled then
+		startPreviewHealthAnimation()
+	else
+		stopPreviewHealthAnimation()
+		fill.Size = UDim2.new(1, 0, 1, 0)
+		fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	end
+
+	-- NAME
+	local nameEnabled = Toggles.GetState("vis_name") == true
+	previewNameLabel.Visible = nameEnabled
+end
 
 	------------------------------------------------------------
 	-- BUILD AVATAR
@@ -347,6 +356,7 @@ end
 	------------------------------------------------------------
 
 	Toggles.Subscribe("vis_boxes", refreshPreviewESP)
+	Toggles.Subscribe("vis_boxes_3d", refreshPreviewESP)
 	Toggles.Subscribe("vis_health", refreshPreviewESP)
 	Toggles.Subscribe("vis_name", refreshPreviewESP)
 	Toggles.Subscribe("vis_glow", refreshPreviewESP)
