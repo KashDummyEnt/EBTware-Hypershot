@@ -336,11 +336,17 @@ local function startESP()
 			local plr = Players:GetPlayerFromCharacter(model)
 			local displayName = plr and plr.DisplayName or model.Name
 
-			esp.name.Visible = nameEnabled
-			esp.name.Text = displayName
-			esp.name.TextColor3 = color
-			esp.name.Size = UDim2.new(1,0,0,14)
-			esp.name.Position = UDim2.new(0,0,0,-16)
+esp.name.Visible = nameEnabled
+esp.name.Text = displayName
+esp.name.TextColor3 = color
+esp.name.TextScaled = false
+
+-- Dynamic font scaling based on box height
+local textSize = math.clamp(height * 0.18, 12, 20)
+esp.name.TextSize = textSize
+
+esp.name.Size = UDim2.new(1,0,0,textSize + 2)
+esp.name.Position = UDim2.new(0,0,0,-(textSize + 4))
 
 			local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
 
