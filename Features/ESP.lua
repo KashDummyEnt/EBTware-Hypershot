@@ -105,9 +105,26 @@ local function handleHighlight(model: Model): Color3
 
 	local fill = highlight.FillColor
 
-	-- GLOW ENABLED
+	------------------------------------------------------------------
+	-- DEPTH MODE LOGIC (Your Requested Behavior)
+	------------------------------------------------------------------
+
 	if glowEnabled then
 		highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	else
+		if isColorClose(fill, BLUE, 0.05) then
+			highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		else
+			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		end
+	end
+
+	------------------------------------------------------------------
+	-- COLOR LOGIC
+	------------------------------------------------------------------
+
+	-- GLOW ENABLED
+	if glowEnabled then
 
 		-- If roughly green, force to blue
 		if isColorClose(fill, GREEN, 0.05) then
@@ -121,7 +138,6 @@ local function handleHighlight(model: Model): Color3
 	end
 
 	-- GLOW DISABLED
-	highlight.DepthMode = Enum.HighlightDepthMode.Occluded
 
 	-- If roughly blue (forced), revert to green
 	if isColorClose(fill, BLUE, 0.05) then
