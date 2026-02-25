@@ -1,0 +1,315 @@
+--!strict
+-- ESP.lua
+-- Toggle-driven 2D Box ESP wired to ToggleSwitches
+-- Requires: getgenv().__HIGGI_TOGGLES_API
+
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
+
+local LocalPlayer = Players.LocalPlayer
+
+local Toggles = (typeof(getgenv) == "function" and getgenv().__HIGGI_TOGGLES_API) or _G.__HIGGI_TOGGLES_API
+if not Toggles then
+	error("Toggle API not found.")
+end
+
+----------------------------------------------------------------
+-- CONFIG
+----------------------------------------------------------------
+
+local BLUE = Color3.fromRGB(0,120,255)
+local HEALTH_GREEN = Color3.fromRGB(0,255,0)
+
+local SNAP_THICKNESS = 0.05
+local SNAP_TRANSPARENCY = 0.15
+
+local BOX_THICKNESS = 2
+local HEALTH_WIDTH = 2
+
+local MIN_BOX_HEIGHT = 6
+local MIN_BOX_WIDTH = 3
+
+----------------------------------------------------------------
+-- STATE
+----------------------------------------------------------------
+
+local ESP_ENABLED = false
+local SNAP_ENABLED = false
+
+----------------------------------------------------------------
+-- STORAGE
+----------------------------------------------------------------
+
+type ESPData = {
+	box: Frame,
+	stroke: UIStroke,
+	healthBg: Frame,
+	healthFill: Frame,
+	name: TextLabel,
+}
+
+type SnapData = {
+	part: BasePart,
+	ad: BoxHandleAdornment,
+}
+
+local espByModel: {[Model]: ESPData} = {}
+local snapByModel: {[Model]: SnapData} = {}
+
+----------------------------------------------------------------
+-- GUI ROOT
+----------------------------------------------------------------
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Higgi2DESP"
+screenGui.IgnoreGuiInset = true
+screenGui.ResetOnSpawn = false
+screenGui.Enabled = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+----------------------------------------------------------------
+-- UTIL
+----------------------------------------------------------------
+
+local function isCharacterModel(model: Instance): boolean
+	if not model:IsA("Model") then return false end
+	return model:FindFirstChildOfClass("Humanoid") ~= nil
+end
+
+local function shouldSkip(model: Model, localChar: Model?): boolean
+	if model == localChar then return true end
+	if model.Name == "BotRig" then return true end
+	return false
+end
+
+----------------------------------------------------------------
+-- CLEANUP
+----------------------------------------------------------------
+
+local function destroyESP(model: Model)
+	local esp = espByModel[model]
+	if esp then
+		esp.box:Destroy()
+		espByModel[model] = nil
+	end
+
+	local snap = snapByModel[model]
+	if snap then
+		snap.part:Destroy()
+		snapByModel[model] = nil
+	end
+end
+
+local function clearAll()
+	for model, _ in pairs(espByModel) do
+		destroyESP(model)
+	end
+end
+
+----------------------------------------------------------------
+-- CREATE ESP
+----------------------------------------------------------------
+
+local function createESP(model: Model): ESPData
+	local box = Instance.new("Frame")
+	box.BackgroundTransparency = 1
+	box.BorderSizePixel = 0
+	box.Visible = false
+	box.Parent = screenGui
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = BOX_THICKNESS
+	stroke.Parent = box
+
+	local healthBg = Instance.new("Frame")
+	healthBg.BackgroundColor3 = Color3.fromRGB(35,35,35)
+	healthBg.BorderSizePixel = 0
+	healthBg.Parent = box
+
+	local healthFill = Instance.new("Frame")
+	healthFill.BorderSizePixel = 0
+	healthFill.BackgroundColor3 = HEALTH_GREEN
+	healthFill.Parent = healthBg
+
+	local name = Instance.new("TextLabel")
+	name.BackgroundTransparency = 1
+	name.TextScaled = true
+	name.Font = Enum.Font.GothamSemibold
+	name.TextStrokeTransparency = 0.5
+	name.Parent = box
+
+	local data: ESPData = {
+		box = box,
+		stroke = stroke,
+		healthBg = healthBg,
+		healthFill = healthFill,
+		name = name,
+	}
+
+	espByModel[model] = data
+	return data
+end
+
+local function getESP(model: Model): ESPData
+	return espByModel[model] or createESP(model)
+end
+
+----------------------------------------------------------------
+-- SNAP
+----------------------------------------------------------------
+
+local function createSnap(model: Model): SnapData
+	local p = Instance.new("Part")
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanTouch = false
+	p.CanQuery = false
+	p.CastShadow = false
+	p.Transparency = 1
+	p.Size = Vector3.new(0.2,0.2,0.2)
+	p.Parent = workspace
+
+	local ad = Instance.new("BoxHandleAdornment")
+	ad.Adornee = p
+	ad.AlwaysOnTop = true
+	ad.ZIndex = 10
+	ad.Transparency = SNAP_TRANSPARENCY
+	ad.Parent = p
+
+	local data: SnapData = {
+		part = p,
+		ad = ad,
+	}
+
+	snapByModel[model] = data
+	return data
+end
+
+local function getSnap(model: Model): SnapData
+	return snapByModel[model] or createSnap(model)
+end
+
+----------------------------------------------------------------
+-- RENDER LOOP
+----------------------------------------------------------------
+
+RunService.RenderStepped:Connect(function()
+
+	if not ESP_ENABLED then
+		return
+	end
+
+	local localChar = LocalPlayer.Character
+	if not localChar then return end
+
+	local localRoot = localChar:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local localHum = localChar:FindFirstChildOfClass("Humanoid")
+	if not localRoot or not localHum then return end
+
+	local origin = localRoot.Position - Vector3.new(0, localHum.HipHeight + (localRoot.Size.Y / 2), 0)
+
+	for model, _ in pairs(espByModel) do
+		if not model:IsDescendantOf(workspace) then
+			destroyESP(model)
+		end
+	end
+
+	for _, model in ipairs(workspace:GetDescendants()) do
+		if not model:IsA("Model") then continue end
+		if not isCharacterModel(model) then continue end
+		if shouldSkip(model, localChar) then continue end
+
+		local hum = model:FindFirstChildOfClass("Humanoid")
+		local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local head = model:FindFirstChild("Head") :: BasePart?
+
+		if not hum or not root or not head or hum.Health <= 0 then
+			destroyESP(model)
+			continue
+		end
+
+		local top3D = head.Position + Vector3.new(0,0.5,0)
+		local bottom3D = root.Position - Vector3.new(0,hum.HipHeight + (root.Size.Y/2),0)
+
+		local top2D, topOnScreen = Camera:WorldToViewportPoint(top3D)
+		local bottom2D, bottomOnScreen = Camera:WorldToViewportPoint(bottom3D)
+
+		if not topOnScreen or not bottomOnScreen then
+			if espByModel[model] then
+				espByModel[model].box.Visible = false
+			end
+			continue
+		end
+
+		local rawHeight = math.abs(bottom2D.Y - top2D.Y)
+		local height = math.max(rawHeight, MIN_BOX_HEIGHT)
+
+		local rawWidth = rawHeight * 0.5
+		local width = math.max(rawWidth, MIN_BOX_WIDTH)
+
+		local esp = getESP(model)
+		local box = esp.box
+
+		box.Visible = true
+		box.Size = UDim2.fromOffset(width, height)
+		box.Position = UDim2.fromOffset(top2D.X - width/2, top2D.Y)
+
+		esp.stroke.Color = BLUE
+
+		local plr = Players:GetPlayerFromCharacter(model)
+		local displayName = plr and plr.DisplayName or model.Name
+
+		esp.name.Text = displayName
+		esp.name.TextColor3 = BLUE
+		esp.name.Size = UDim2.new(1,0,0,14)
+		esp.name.Position = UDim2.new(0,0,0,-16)
+
+		local hpPercent = math.clamp(hum.Health / hum.MaxHealth,0,1)
+
+		esp.healthBg.Size = UDim2.new(0, HEALTH_WIDTH, 1, 0)
+		esp.healthBg.Position = UDim2.new(0, -HEALTH_WIDTH-2, 0, 0)
+
+		esp.healthFill.Size = UDim2.new(1,0, hpPercent,0)
+		esp.healthFill.Position = UDim2.new(0,0, 1-hpPercent,0)
+
+		if SNAP_ENABLED then
+			local dir = bottom3D - origin
+			local len = dir.Magnitude
+			if len > 0.1 then
+				local mid = origin + dir*0.5
+				local snap = getSnap(model)
+
+				snap.part.CFrame = CFrame.lookAt(mid, bottom3D)
+				snap.ad.Size = Vector3.new(SNAP_THICKNESS,SNAP_THICKNESS,len)
+				snap.ad.Color3 = BLUE
+			end
+		end
+	end
+end)
+
+----------------------------------------------------------------
+-- TOGGLE SUBSCRIPTIONS
+----------------------------------------------------------------
+
+Toggles.Subscribe("vis_esp", function(state)
+	ESP_ENABLED = state
+	screenGui.Enabled = state
+
+	if not state then
+		clearAll()
+	end
+end)
+
+Toggles.Subscribe("vis_snaplines", function(state)
+	SNAP_ENABLED = state
+
+	if not state then
+		for model, snap in pairs(snapByModel) do
+			snap.part:Destroy()
+			snapByModel[model] = nil
+		end
+	end
+end)
+
+return {}
